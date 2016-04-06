@@ -5,7 +5,7 @@ public class WordCount {
 	
 	public static class WordCountMapper extends Mapper
 	{
-		public void getKaushik()
+		public static void getKaushik()
 		{
 			System.out.println("Inside getKaushik method in WordCountMapper class");
 		}
@@ -22,10 +22,14 @@ public class WordCount {
 		{
 			Configuration conf = new Configuration();
 			Job job = Job.getInstance(conf,"Word Count");
-			//job.setJarByClass(WordCount.class);
+			job.setJarByClass(WordCount.class,"wordcount.WordCount");
 			job.setMapperClass(WordCountMapper.class,"wordcount.WordCount$WordCountMapper");
-//			job.setReducerClass(WordCountRedcuer.class);
-//			System.exit(job.waitForCompletion(true)? 0 :1);
+			job.setReducerClass(WordCountRedcuer.class,"wordcount.WordCount$WordCountRedcuer");
+			int status = job.waitForCompletion(true);
+			if(status==-1)
+				System.out.println(job.getJobname()+" job failed");
+			else
+				System.out.println(job.getJobname()+" job completed successfully");
 		}
 		catch(Exception e)
 		{
