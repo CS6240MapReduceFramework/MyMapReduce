@@ -5,9 +5,9 @@ public class WordCount {
 	
 	public static class WordCountMapper extends Mapper
 	{
-		public static void getKaushik()
+		public void map(Object key, Text value, Context context)
 		{
-			System.out.println("Inside getKaushik method in WordCountMapper class");
+			
 		}
 	}
 	

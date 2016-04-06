@@ -28,7 +28,7 @@ public class Job {
 	}
 	
 	//public void setMapperClass(Class<? extends Mapper> mapperClass) throws ClassNotFoundException
-	public void setMapperClass(Class<? extends Mapper> mapperClass, String mapperClassString) throws ClassNotFoundException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException
+	public void setMapperClass(Class<? extends Mapper> mapperClass, String mapperClassString) throws ClassNotFoundException
 	{
 		//TODO: get the mapperClassString from mapperClass
 		ClassLoader classLoader = mapperClass.getClassLoader();
