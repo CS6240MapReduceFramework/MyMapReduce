@@ -9,3 +9,11 @@ Instructions to contribute to this repository:
 4. Every merge requires atleast two approvals to merge your pull request to this master branch
 5. Keep the commit messages short, apt and meaningful 
 6. Make every effort to keep the master clean
+
+Steps to push changes to master: 
+
+git status (to see the modified changes)
+git add -A (to add all the modified changes to commit list)
+git commit -m <Commit Message> (to commit the changes with a commit message)
+git push origin master (to push the code to the master branch on Github)
+
