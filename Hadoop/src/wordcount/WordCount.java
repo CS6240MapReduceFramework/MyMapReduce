@@ -1,5 +1,6 @@
 package wordcount;
 import hadoop.*;
+import java.nio.file.Path;
 
 public class WordCount {
 	
@@ -25,6 +26,9 @@ public class WordCount {
 			job.setJarByClass(WordCount.class,"wordcount.WordCount");
 			job.setMapperClass(WordCountMapper.class,"wordcount.WordCount$WordCountMapper");
 			job.setReducerClass(WordCountRedcuer.class,"wordcount.WordCount$WordCountRedcuer");
+			FileInputFormat.addInputPath(job, args[0]);
+			FileOutputFormat.setOutputPath(job,args[1]);
+			
 			int status = job.waitForCompletion(true);
 			if(status==-1)
 				System.out.println(job.getJobname()+" job failed");
