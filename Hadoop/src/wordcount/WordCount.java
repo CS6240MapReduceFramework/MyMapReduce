@@ -23,7 +23,7 @@ public class WordCount {
 			Configuration conf = new Configuration();
 			Job job = Job.getInstance(conf,"Word Count");
 			//job.setJarByClass(WordCount.class);
-			job.setMapperClass(WordCountMapper.class);
+			job.setMapperClass(WordCountMapper.class,"wordcount.WordCount$WordCountMapper");
 //			job.setReducerClass(WordCountRedcuer.class);
 //			System.exit(job.waitForCompletion(true)? 0 :1);
 		}
