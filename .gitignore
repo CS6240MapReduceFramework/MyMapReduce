@@ -1,4 +1,8 @@
 .project
 *.class
+<<<<<<< HEAD
 *.iml
 Hadoop/.idea
+=======
+Hadoop/bin/WordCount/*.class
+>>>>>>> kaushik

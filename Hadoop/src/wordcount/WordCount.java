@@ -13,7 +13,11 @@ public class WordCount {
 	}
 	
 	public static class WordCountRedcuer extends Reducer
-	{
+	{	
+		public void reduce(Text key, Iterable<Text> values, Context context)
+		{
+			
+		}
 		
 	}
 	
@@ -23,9 +27,9 @@ public class WordCount {
 		{
 			Configuration conf = new Configuration();
 			Job job = Job.getInstance(conf,"Word Count");
-			job.setJarByClass(WordCount.class,"wordcount.WordCount");
-			job.setMapperClass(WordCountMapper.class,"wordcount.WordCount$WordCountMapper");
-			job.setReducerClass(WordCountRedcuer.class,"wordcount.WordCount$WordCountRedcuer");
+			job.setJarByClass(WordCount.class);
+			job.setMapperClass(WordCountMapper.class);
+			job.setReducerClass(WordCountRedcuer.class);
 			FileInputFormat.addInputPath(job, args[0]);
 			FileOutputFormat.setOutputPath(job,args[1]);
 			

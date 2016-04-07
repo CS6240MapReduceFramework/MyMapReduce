@@ -1,7 +1,5 @@
 package hadoop;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 
 public class Job {
 
@@ -27,26 +25,24 @@ public class Job {
 		return job;
 	}
 	
-	//public void setMapperClass(Class<? extends Mapper> mapperClass) throws ClassNotFoundException
-	public void setMapperClass(Class<? extends Mapper> mapperClass, String mapperClassString) throws ClassNotFoundException
+	public void setMapperClass(Class<? extends Mapper> mapperClass) throws ClassNotFoundException
 	{
-		//TODO: get the mapperClassString from mapperClass
 		ClassLoader classLoader = mapperClass.getClassLoader();
-		job.mapper = classLoader.loadClass(mapperClassString);
+		job.mapper = classLoader.loadClass(mapperClass.getName());
 //		Method method = job.mapper.getMethod("map");
 //		method.invoke(null);	
 	}
 	
-	public void setReducerClass(Class<? extends Reducer> reducerClass, String reducerClassString) throws ClassNotFoundException
+	public void setReducerClass(Class<? extends Reducer> reducerClass) throws ClassNotFoundException
 	{
 		ClassLoader classLoader = reducerClass.getClassLoader();
-		job.reducer = classLoader.loadClass(reducerClassString);
+		job.reducer = classLoader.loadClass(reducerClass.getName());
 	}
 	
-	public void setJarByClass(Class jarClass, String jarClassString) throws ClassNotFoundException
+	public void setJarByClass(Class jarClass) throws ClassNotFoundException
 	{
 		ClassLoader classLoader = jarClass.getClassLoader();
-		job.jar = classLoader.loadClass(jarClassString);
+		job.jar = classLoader.loadClass(jarClass.getName());
 	}
 	
 	public int waitForCompletion(Boolean bool)
