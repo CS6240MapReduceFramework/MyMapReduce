@@ -20,5 +20,6 @@ clean:
 	(cd server && rm -rf server.jar instances.txt target project/target project/project)
 
 .PHONY: all clean
+	#Test
 
 
