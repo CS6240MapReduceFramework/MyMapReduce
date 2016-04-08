@@ -24,6 +24,7 @@ public class Job {
 	public int NUM_REDUCE_TASKS;
 	public int MAPPER_TASKS = 0;
 	public int REDUCER_TASKS = 0;
+	public float mapperPercentageComplete = 0.0f;
 	public Configuration conf;
 
 	public String getJobname() {
@@ -83,7 +84,7 @@ public class Job {
 	public void reducerTask(File tempFolder) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, IOException
 	{
 
-		
+
 		System.out.println("Reducer started");
 
 		Class[] cArgs = new Class[3];
@@ -95,12 +96,12 @@ public class Job {
 		String part_output_file = job.conf.prop.getProperty("OUTPUT_DIR")+"part-r-00000";
 		reduceContext.setup(part_output_file);
 		HashMap<String, ArrayList<Integer>> wordMap = new HashMap<>();
-		
+
 		for(File file : tempFolder.listFiles())
 		{
 			FileReader fileReader = new FileReader(file);
 			BufferedReader bufferedReader = new BufferedReader(fileReader);
-			
+
 			String line = null;
 			while((line = bufferedReader.readLine())!= null)
 			{
@@ -122,7 +123,7 @@ public class Job {
 			bufferedReader.close();
 
 		}
-		
+
 
 		for(String key : wordMap.keySet())
 		{
@@ -135,10 +136,26 @@ public class Job {
 	public boolean isMapPhaseComplete(ArrayList<MapperThread> threads)
 	{
 		boolean bool = true;
+		int count = threads.size();
+		float completeCount = 0.0f;
+		float percentageCompleted = 0.0f;
 		for(MapperThread t : threads)
-		{
+		{	
+			if(t.status.equals("COMPLETED"))
+				completeCount++;
+
 			bool = bool && t.status.equals("COMPLETED");
+
 		}
+
+
+		percentageCompleted = (completeCount/count)*100;
+		if(job.mapperPercentageComplete != percentageCompleted)
+		{
+			job.mapperPercentageComplete = percentageCompleted;
+			System.out.println("Map progress : "+ percentageCompleted+"% completed.");
+		}
+		
 		return bool;
 	}
 
@@ -174,11 +191,10 @@ public class Job {
 				//System.out.println("Mappers not completed yet");
 			}
 		}
-		System.out.println("Map : 100% complete");
 		File temp_folder = new File(job.conf.prop.getProperty("TEMP_DIR"));
-		
+
 		reducerTask(temp_folder);
-				
+
 
 
 

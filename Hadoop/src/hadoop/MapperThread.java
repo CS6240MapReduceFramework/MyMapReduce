@@ -53,7 +53,7 @@ public class MapperThread implements Runnable{
 		status = "STARTED";
 		
 		job.MAPPER_TASKS++;
-		System.out.println(Thread.currentThread().getName()+" started");
+		//System.out.println(Thread.currentThread().getName()+" started");
 		FileReader fileReader = new FileReader(inputFile);
 		BufferedReader bufferedReader = new BufferedReader(fileReader);
 		
@@ -76,7 +76,7 @@ public class MapperThread implements Runnable{
 		
 		bufferedReader.close();
 		status = "COMPLETED";
-		System.out.println(Thread.currentThread().getName()+" completed");
+		//System.out.println(Thread.currentThread().getName()+" completed");
 	}
 	
 	

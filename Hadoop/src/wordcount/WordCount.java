@@ -41,8 +41,12 @@ public class WordCount {
 		
 	}
 	
+	/*
+	 * args[0] - input directory
+	 * */
 	public static void main(String args[])
 	{
+		Job job = null;
 		try
 		{
 			Configuration conf = new Configuration();
@@ -50,7 +54,7 @@ public class WordCount {
 			
 			conf.loadProperties(propertiesFile);
 			
-			Job job = Job.getInstance(conf,"Word Count");
+			job = Job.getInstance(conf,"Word Count");
 			job.setJarByClass(WordCount.class);
 			job.setMapperClass(WordCountMapper.class);
 			job.setReducerClass(WordCountRedcuer.class);
@@ -60,10 +64,11 @@ public class WordCount {
 			
 			job.waitForCompletion(true);
 			
-			System.out.println("done");
+			System.out.println(job.getJobname()+" job completed successfully!");
 		}
 		catch(Exception e)
 		{
+			System.out.println(job.getJobname()+" job failed!!");
 			e.printStackTrace();
 		}
 	}
