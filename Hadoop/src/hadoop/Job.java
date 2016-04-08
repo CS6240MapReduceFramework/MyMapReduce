@@ -20,7 +20,7 @@ public class Job {
 	public Object reducerInstance;
 	private Class jar;
 	private static Job job;
-	public  String INPUT_DIR;
+	public Configuration conf;
 	
 	public String getJobname() {
 		return jobname;
@@ -34,20 +34,15 @@ public class Job {
 	{
 		job = new Job();
 		job.jobname = jobname;
+		job.conf = conf;
 		
 		return job;
 	}
 	
 	public void setMapperClass(Class<? extends Mapper> mapperClass) throws ClassNotFoundException, InstantiationException, IllegalAccessException
 	{
-//		ClassLoader classLoader = mapperClass.getClassLoader();
-//		job.mapper = classLoader.loadClass(mapperClass.getName());
 		mapperCls = Class.forName(mapperClass.getName());
 		mapperInstance = mapperCls.newInstance();
-		
-		
-//		Method method = job.mapper.getMethod("map");
-//		method.invoke(null);	
 	}
 	
 	public void setReducerClass(Class<? extends Reducer> reducerClass) throws ClassNotFoundException, InstantiationException, IllegalAccessException
@@ -65,7 +60,7 @@ public class Job {
 	
 	public void mapperTask() throws NoSuchMethodException, SecurityException, IOException, IllegalAccessException, IllegalArgumentException, InvocationTargetException
 	{
-		FileReader fileReader = new FileReader(job.INPUT_DIR+"/alice.txt");
+		FileReader fileReader = new FileReader(job.conf.getProp().getProperty("INPUT_FILE"));
 		BufferedReader bufferedReader = new BufferedReader(fileReader);
 		
 		String line = null;
@@ -76,9 +71,8 @@ public class Job {
 				
 		Method mapMethod = mapperCls.getMethod("map",cArgs);
 		
-		System.out.println("got Method map from Mapper class: "+mapMethod.toString());
 		Context mapContext = new Context();
-		mapContext.setup("/home/kaushikveluru/Desktop/Project/alice_map_output.txt");
+		mapContext.setup(job.conf.prop.getProperty("TEMP_FILE"));
 		while((line = bufferedReader.readLine())!= null)
 		{
 			mapMethod.invoke(mapperInstance,new Object(),line,mapContext);
@@ -90,7 +84,7 @@ public class Job {
 	
 	public void reducerTask() throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, IOException
 	{
-		FileReader fileReader = new FileReader("/home/kaushikveluru/Desktop/Project/alice_map_output.txt");
+		FileReader fileReader = new FileReader(job.conf.prop.getProperty("TEMP_FILE"));
 		BufferedReader bufferedReader = new BufferedReader(fileReader);
 		
 		String line = null;
@@ -100,10 +94,8 @@ public class Job {
 		cArgs[2] = Context.class;
 				
 		Method reduceMethod = reducerCls.getMethod("reduce",cArgs);
-		
-		System.out.println("got Method reduce from Reducer class: "+reduceMethod.toString());
 		Context reduceContext = new Context();
-		reduceContext.setup("/home/kaushikveluru/Desktop/Project/alice_reduce_output.txt");
+		reduceContext.setup(job.conf.prop.getProperty("OUTPUT_FILE"));
 		
 		HashMap<String, ArrayList<Integer>> wordMap = new HashMap<>();
 		
@@ -128,7 +120,6 @@ public class Job {
 		
 		for(String key : wordMap.keySet())
 		{
-			
 			reduceMethod.invoke(reducerInstance,key,wordMap.get(key),reduceContext);
 		}
 		
@@ -138,10 +129,13 @@ public class Job {
 	{
 		
 		int status = -1;
-		
+		System.out.println("Starting Mapper..");
 		mapperTask();
+		System.out.println("Mapper completed..");
 		
+		System.out.println("Starting Reducer...");
 		reducerTask();
+		System.out.println("Reducer completed...");
 		
 		
 		return status;

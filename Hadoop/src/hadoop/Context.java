@@ -1,19 +1,23 @@
 package hadoop;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
 public class Context {
 
-	private static String TEMP_DIR ;
+	
 	private static BufferedWriter bufferedWriter;
 	private static FileWriter fileWriter;
 	
-	public void setup(String temp_dir) throws IOException
+	public void setup(String fileName) throws IOException
 	{
-		TEMP_DIR = temp_dir;
-		fileWriter = new FileWriter(TEMP_DIR);
+		File f = new File(fileName);
+		if(!f.exists())
+			f.createNewFile();
+			
+		fileWriter = new FileWriter(fileName,true);
 		bufferedWriter = new BufferedWriter(fileWriter);
 	}
 	public void write(String key, Integer value) throws IOException

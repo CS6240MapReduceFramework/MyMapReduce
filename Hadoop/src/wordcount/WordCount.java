@@ -1,7 +1,9 @@
 package wordcount;
 import hadoop.*;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
@@ -45,6 +47,10 @@ public class WordCount {
 		try
 		{
 			Configuration conf = new Configuration();
+			String propertiesFile = "/home/kaushikveluru/Documents/Git/MyMapReduce/Hadoop/src/wordcount/config.properties";
+			
+			conf.loadProperties(propertiesFile);
+			
 			Job job = Job.getInstance(conf,"Word Count");
 			job.setJarByClass(WordCount.class);
 			job.setMapperClass(WordCountMapper.class);
@@ -52,11 +58,9 @@ public class WordCount {
 			FileInputFormat.addInputPath(job, args[0]);
 			FileOutputFormat.setOutputPath(job,args[1]);
 			
-			int status = job.waitForCompletion(true);
-			if(status==-1)
-				System.out.println(job.getJobname()+" job failed");
-			else
-				System.out.println(job.getJobname()+" job completed successfully");
+			job.waitForCompletion(true);
+			
+			System.out.println("done");
 		}
 		catch(Exception e)
 		{

@@ -13,7 +13,9 @@ public class FileInputFormat {
 
 	public static void addInputPath(Job job, String inputDir) throws IOException, NoSuchMethodException, SecurityException
 	{
-		job.INPUT_DIR = inputDir;
+		job.conf.prop.setProperty("INPUT_DIR", inputDir);
+		
+		
 	}
 	
 	
