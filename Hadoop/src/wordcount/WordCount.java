@@ -1,22 +1,41 @@
 package wordcount;
 import hadoop.*;
+
+import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.StringTokenizer;
 
 public class WordCount {
 	
 	public static class WordCountMapper extends Mapper
 	{
-		public void map(Object key, Text value, Context context)
+		private String word = new String();
+		private Integer count = new Integer(1);
+		
+		public void map(Object key, String value, Context context) throws IOException
 		{
 			
+			
+			StringTokenizer tokens = new StringTokenizer(value, " ");
+			while(tokens.hasMoreTokens())
+			{
+				word = tokens.nextToken();
+				context.write(word,count);
+			}
 		}
 	}
 	
 	public static class WordCountRedcuer extends Reducer
 	{	
-		public void reduce(Text key, Iterable<Text> values, Context context)
+		public void reduce(String key, ArrayList<Integer> values, Context context) throws IOException
 		{
-			
+			int sum = 0;
+		      for (Integer val : values) {
+		        sum += val;
+		      }
+		      
+		      context.write(key,sum);
 		}
 		
 	}
