@@ -1,6 +1,7 @@
 package hadoop;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -20,6 +21,9 @@ public class Job {
 	public Object reducerInstance;
 	private Class jar;
 	private static Job job;
+	public int NUM_REDUCE_TASKS;
+	public int MAPPER_TASKS = 0;
+	public int REDUCER_TASKS = 0;
 	public Configuration conf;
 	
 	public String getJobname() {
@@ -45,6 +49,10 @@ public class Job {
 		mapperInstance = mapperCls.newInstance();
 	}
 	
+	public void setNumReduceTasks(int reduceTasks)
+	{
+		job.NUM_REDUCE_TASKS = reduceTasks;
+	}
 	public void setReducerClass(Class<? extends Reducer> reducerClass) throws ClassNotFoundException, InstantiationException, IllegalAccessException
 	{
 		reducerCls = Class.forName(reducerClass.getName());
@@ -58,9 +66,12 @@ public class Job {
 		job.jar = classLoader.loadClass(jarClass.getName());
 	}
 	
-	public void mapperTask() throws NoSuchMethodException, SecurityException, IOException, IllegalAccessException, IllegalArgumentException, InvocationTargetException
+	public void mapperTask(File inputFile) throws NoSuchMethodException, SecurityException, IOException, IllegalAccessException, IllegalArgumentException, InvocationTargetException
 	{
-		FileReader fileReader = new FileReader(job.conf.getProp().getProperty("INPUT_FILE"));
+		
+		job.MAPPER_TASKS++;
+		System.out.println("Mapper task "+job.MAPPER_TASKS+" started");
+		FileReader fileReader = new FileReader(inputFile);
 		BufferedReader bufferedReader = new BufferedReader(fileReader);
 		
 		String line = null;
@@ -72,7 +83,8 @@ public class Job {
 		Method mapMethod = mapperCls.getMethod("map",cArgs);
 		
 		Context mapContext = new Context();
-		mapContext.setup(job.conf.prop.getProperty("TEMP_FILE"));
+		String temp_map_file = job.conf.prop.getProperty("TEMP_DIR")+"part-temp-"+job.MAPPER_TASKS;
+		mapContext.setup(temp_map_file);
 		while((line = bufferedReader.readLine())!= null)
 		{
 			mapMethod.invoke(mapperInstance,new Object(),line,mapContext);
@@ -80,11 +92,15 @@ public class Job {
 		}
 		
 		bufferedReader.close();
+		System.out.println("Mapper task "+job.MAPPER_TASKS+" completed");
 	}
 	
-	public void reducerTask() throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, IOException
+	public void reducerTask(File inputFile) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, IOException
 	{
-		FileReader fileReader = new FileReader(job.conf.prop.getProperty("TEMP_FILE"));
+		
+		job.REDUCER_TASKS++;
+		System.out.println("Reducer task "+job.REDUCER_TASKS+" started");
+		FileReader fileReader = new FileReader(inputFile);
 		BufferedReader bufferedReader = new BufferedReader(fileReader);
 		
 		String line = null;
@@ -95,12 +111,16 @@ public class Job {
 				
 		Method reduceMethod = reducerCls.getMethod("reduce",cArgs);
 		Context reduceContext = new Context();
-		reduceContext.setup(job.conf.prop.getProperty("OUTPUT_FILE"));
+		String part_output_file = job.conf.prop.getProperty("OUTPUT_DIR")+"part-r-0000"+job.REDUCER_TASKS;
+		reduceContext.setup(part_output_file);
 		
 		HashMap<String, ArrayList<Integer>> wordMap = new HashMap<>();
 		
+		line = bufferedReader.readLine();
+		
 		while((line = bufferedReader.readLine())!= null)
 		{
+			
 			String[] lines = line.split(" ");
 			if(wordMap.containsKey(lines[0]))
 			{
@@ -123,20 +143,40 @@ public class Job {
 			reduceMethod.invoke(reducerInstance,key,wordMap.get(key),reduceContext);
 		}
 		
+		System.out.println("Reducer task "+job.REDUCER_TASKS+" completed");
+	}
+	
+	public void cleanDirectory(File directory)
+	{
+		for(File f : directory.listFiles())
+			f.delete();
+		
+	}
+	public void cleanUpFiles()
+	{
+		cleanDirectory(new File(job.conf.prop.getProperty("TEMP_DIR")));
+		cleanDirectory(new File(job.conf.prop.getProperty("OUTPUT_DIR")));
+		
 	}
 	
 	public int waitForCompletion(Boolean bool) throws NoSuchMethodException, SecurityException, IOException, IllegalAccessException, IllegalArgumentException, InvocationTargetException
 	{
 		
 		int status = -1;
-		System.out.println("Starting Mapper..");
-		mapperTask();
-		System.out.println("Mapper completed..");
 		
-		System.out.println("Starting Reducer...");
-		reducerTask();
-		System.out.println("Reducer completed...");
+		cleanUpFiles();
 		
+		File files = new File(job.conf.prop.getProperty("INPUT_DIR"));
+		for(File file :files.listFiles())
+		{
+			mapperTask(file);
+		}
+		
+		File temp_folder = new File(job.conf.prop.getProperty("TEMP_DIR"));
+		for(File file : temp_folder.listFiles())
+		{
+			reducerTask(file);
+		}		
 		
 		return status;
 	}

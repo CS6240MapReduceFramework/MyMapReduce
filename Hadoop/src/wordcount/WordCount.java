@@ -36,7 +36,6 @@ public class WordCount {
 		      for (Integer val : values) {
 		        sum += val;
 		      }
-		      
 		      context.write(key,sum);
 		}
 		
@@ -55,6 +54,7 @@ public class WordCount {
 			job.setJarByClass(WordCount.class);
 			job.setMapperClass(WordCountMapper.class);
 			job.setReducerClass(WordCountRedcuer.class);
+			job.setNumReduceTasks(2);
 			FileInputFormat.addInputPath(job, args[0]);
 			FileOutputFormat.setOutputPath(job,args[1]);
 			

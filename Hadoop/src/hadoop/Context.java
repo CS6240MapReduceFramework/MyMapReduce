@@ -16,12 +16,13 @@ public class Context {
 		File f = new File(fileName);
 		if(!f.exists())
 			f.createNewFile();
-			
+		
 		fileWriter = new FileWriter(fileName,true);
-		bufferedWriter = new BufferedWriter(fileWriter);
 	}
 	public void write(String key, Integer value) throws IOException
 	{
+		bufferedWriter = new BufferedWriter(fileWriter);
 		bufferedWriter.write(key+" "+value+"\n");
+		bufferedWriter.flush();
 	}
 }

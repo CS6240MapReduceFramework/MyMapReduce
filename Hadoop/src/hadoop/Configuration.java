@@ -25,7 +25,6 @@ public class Configuration {
 		prop = new Properties();
 		InputStream input = new FileInputStream(propFileName);
 		prop.load(input);
-		System.out.println("INPUT_FILE="+prop.getProperty("INPUT_FILE"));
 		input.close();
 	}
 }
