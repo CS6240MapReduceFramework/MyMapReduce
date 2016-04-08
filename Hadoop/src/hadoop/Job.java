@@ -24,8 +24,9 @@ public class Job {
 	public int NUM_REDUCE_TASKS;
 	public int MAPPER_TASKS = 0;
 	public int REDUCER_TASKS = 0;
-	public float mapperPercentageComplete = 0.0f;
+	public double mapperPercentageComplete = 0.00d;
 	public Configuration conf;
+	public File[] partFiles;
 
 	public String getJobname() {
 		return jobname;
@@ -81,75 +82,24 @@ public class Job {
 		cleanDirectory(new File(job.conf.prop.getProperty("OUTPUT_DIR")));
 
 	}
-	public void reducerTask(File tempFolder) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, IOException
-	{
-
-
-		System.out.println("Reducer started");
-
-		Class[] cArgs = new Class[3];
-		cArgs[0] = String.class;
-		cArgs[1] = ArrayList.class;
-		cArgs[2] = Context.class;
-		Method reduceMethod = job.reducerCls.getMethod("reduce",cArgs);
-		Context reduceContext = new Context();
-		String part_output_file = job.conf.prop.getProperty("OUTPUT_DIR")+"part-r-00000";
-		reduceContext.setup(part_output_file);
-		HashMap<String, ArrayList<Integer>> wordMap = new HashMap<>();
-
-		for(File file : tempFolder.listFiles())
-		{
-			FileReader fileReader = new FileReader(file);
-			BufferedReader bufferedReader = new BufferedReader(fileReader);
-
-			String line = null;
-			while((line = bufferedReader.readLine())!= null)
-			{
-				String[] lines = line.split(" ");
-				if(wordMap.containsKey(lines[0]))
-				{
-					ArrayList<Integer> list = wordMap.get(lines[0]);
-					list.add(1);
-					wordMap.put(lines[0],list);
-				}
-				else
-				{
-					ArrayList<Integer> list = new ArrayList<Integer>();
-					list.add(1);
-					wordMap.put(lines[0], list);
-				}
-			}
-
-			bufferedReader.close();
-
-		}
-
-
-		for(String key : wordMap.keySet())
-		{
-			reduceMethod.invoke(job.reducerInstance,key,wordMap.get(key),reduceContext);
-		}
-
-		System.out.println("Reduce : 100% complete");
-	}
+	
 
 	public boolean isMapPhaseComplete(ArrayList<MapperThread> threads)
 	{
 		boolean bool = true;
 		int count = threads.size();
 		float completeCount = 0.0f;
-		float percentageCompleted = 0.0f;
+		double percentageCompleted = 0.00d;
 		for(MapperThread t : threads)
 		{	
 			if(t.status.equals("COMPLETED"))
 				completeCount++;
 
 			bool = bool && t.status.equals("COMPLETED");
-
 		}
 
 
-		percentageCompleted = (completeCount/count)*100;
+		percentageCompleted = Math.round((completeCount/count)*100.0);
 		if(job.mapperPercentageComplete != percentageCompleted)
 		{
 			job.mapperPercentageComplete = percentageCompleted;
@@ -158,12 +108,36 @@ public class Job {
 		
 		return bool;
 	}
+	
+	public boolean isReducePhaseComplete(ArrayList<ReducerThread> threads)
+	{
+		boolean bool = true;
+		int count = threads.size();
+		float completeCount = 0.0f;
+		double percentageCompleted = 0.00d;
+		for(ReducerThread t : threads)
+		{	
+			if(t.status.equals("COMPLETED"))
+				completeCount++;
 
-	public int waitForCompletion(Boolean bool) throws NoSuchMethodException, SecurityException, IOException, IllegalAccessException, IllegalArgumentException, InvocationTargetException
+			bool = bool && t.status.equals("COMPLETED");
+		}
+
+
+		percentageCompleted = Math.round((completeCount/count)*100.0);
+		if(job.mapperPercentageComplete != percentageCompleted)
+		{
+			job.mapperPercentageComplete = percentageCompleted;
+			System.out.println("Reduce progress : "+ percentageCompleted+"% completed.");
+		}
+		
+		return bool;
+	}
+
+	public void waitForCompletion(Boolean bool) throws NoSuchMethodException, SecurityException, IOException, IllegalAccessException, IllegalArgumentException, InvocationTargetException
 	{
 
-		int status = -1;
-
+		//Cleans TEMP_DIR and OUTPUT_DIR
 		cleanUpFiles();
 
 
@@ -192,12 +166,48 @@ public class Job {
 			}
 		}
 		File temp_folder = new File(job.conf.prop.getProperty("TEMP_DIR"));
+		int part_files_count = temp_folder.listFiles().length;
+		partFiles = temp_folder.listFiles();
+		
+		int files_per_reducer = part_files_count / job.NUM_REDUCE_TASKS;
+		int remaining_files = part_files_count % job.NUM_REDUCE_TASKS;
+		ArrayList<ReducerThread> reducerThreadsList = new ArrayList<ReducerThread>();
+		
+		for(int i=0;i< job.NUM_REDUCE_TASKS;i++)
+		{
+	
+			ReducerThread reducer = new ReducerThread(job);
+			
+			reducer.no_of_files = part_files_count;
+			reducer.startIndex = i*files_per_reducer;
+			if(i==job.NUM_REDUCE_TASKS)
+			{
+				reducer.endIndex = reducer.startIndex + remaining_files - 1;
+			}
+			else
+			{
+				reducer.endIndex = reducer.startIndex + files_per_reducer - 1;
+			}
+		
+			
+			reducerThreadsList.add(reducer);
+			
+			Thread t = new Thread(reducer,""+i);
+			t.start();
+		}
 
-		reducerTask(temp_folder);
+		while(true)
+		{
+			if(isReducePhaseComplete(reducerThreadsList))
+			{
+				break;
+			}
+			else
+			{
+				//System.out.println("Reducer not completed yet");
+			}
+		}
 
 
-
-
-		return status;
 	}
 }
