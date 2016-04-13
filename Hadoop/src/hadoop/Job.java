@@ -17,6 +17,8 @@ public class Job {
 	private String jobname;
 	public Object mapperInstance;
 	public Class<?> mapperCls;
+	public Class<?> partitionerCls;
+	public Object partitionerInstance;
 	public Class<?> reducerCls;
 	public Object reducerInstance;
 	private Class jar;
@@ -51,6 +53,12 @@ public class Job {
 		mapperInstance = mapperCls.newInstance();
 	}
 
+	public void setPartitionerClass(Class<? extends Partitioner> partitionerClass) throws ClassNotFoundException, InstantiationException, IllegalAccessException
+	{
+		partitionerCls = Class.forName(partitionerClass.getName());
+		partitionerInstance = partitionerCls.newInstance();
+	}
+
 	public void setNumReduceTasks(int reduceTasks)
 	{
 		job.NUM_REDUCE_TASKS = reduceTasks;
@@ -67,8 +75,6 @@ public class Job {
 		ClassLoader classLoader = jarClass.getClassLoader();
 		job.jar = classLoader.loadClass(jarClass.getName());
 	}
-
-
 
 	public void cleanDirectory(File directory)
 	{
