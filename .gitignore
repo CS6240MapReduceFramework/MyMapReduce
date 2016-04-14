@@ -1,9 +1,9 @@
 .classpath
 .project
 *.class
-<<<<<<< HEAD
 *.iml
 Hadoop/.idea
-=======
-Hadoop/bin/
->>>>>>> kaushik
+Hadoop/bin
+*.properties
+*.jar
+

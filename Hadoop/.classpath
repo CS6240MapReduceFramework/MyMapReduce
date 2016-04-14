@@ -2,5 +2,15 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
+	<classpathentry kind="lib" path="/home/kaushikveluru/Documents/aws-java-sdk-1.10.69/lib/aws-java-sdk-flow-build-tools-1.10.69.jar"/>
+	<classpathentry kind="lib" path="/home/kaushikveluru/Documents/aws-java-sdk-1.10.69/lib/aws-java-sdk-1.10.69-sources.jar"/>
+	<classpathentry kind="lib" path="/home/kaushikveluru/Documents/aws-java-sdk-1.10.69/lib/aws-java-sdk-1.10.69-javadoc.jar"/>
+	<classpathentry kind="lib" path="/home/kaushikveluru/Documents/aws-java-sdk-1.10.69/lib/aws-java-sdk-1.10.69.jar"/>
+	<classpathentry kind="lib" path="/home/kaushikveluru/Documents/commons-io-2.4/commons-io-2.4-test-sources.jar"/>
+	<classpathentry kind="lib" path="/home/kaushikveluru/Documents/commons-io-2.4/commons-io-2.4-tests.jar"/>
+	<classpathentry kind="lib" path="/home/kaushikveluru/Documents/commons-io-2.4/commons-io-2.4-sources.jar"/>
+	<classpathentry kind="lib" path="/home/kaushikveluru/Documents/commons-io-2.4/commons-io-2.4-javadoc.jar"/>
+	<classpathentry kind="lib" path="/home/kaushikveluru/Documents/commons-io-2.4/commons-io-2.4.jar"/>
+	<classpathentry kind="lib" path="/home/kaushikveluru/Documents/commons-logging-1.2/commons-logging-1.2.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

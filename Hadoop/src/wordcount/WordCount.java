@@ -18,7 +18,6 @@ public class WordCount {
 		public void map(Object key, String value, Context context) throws IOException
 		{
 			
-			
 			StringTokenizer tokens = new StringTokenizer(value, " ");
 			while(tokens.hasMoreTokens())
 			{
@@ -55,10 +54,12 @@ public class WordCount {
 			conf.loadProperties(propertiesFile);
 			
 			job = Job.getInstance(conf,"Word Count");
+			
 			job.setJarByClass(WordCount.class);
 			job.setMapperClass(WordCountMapper.class);
 			job.setReducerClass(WordCountRedcuer.class);
-			job.setNumReduceTasks(2);
+			job.setNumReduceTasks(1);
+			job.setNumberOfNodes(2);
 			FileInputFormat.addInputPath(job, args[0]);
 			FileOutputFormat.setOutputPath(job,args[1]);
 			

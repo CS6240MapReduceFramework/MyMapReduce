@@ -66,6 +66,7 @@ public class MapperThread implements Runnable{
 		Method mapMethod = job.mapperCls.getMethod("map",cArgs);
 		
 		Context mapContext = new Context();
+		System.out.println("thread name: "+ Thread.currentThread().getName());
 		String temp_map_file = job.conf.prop.getProperty("TEMP_DIR")+"part-temp-"+Thread.currentThread().getName();
 		mapContext.setup(temp_map_file);
 		while((line = bufferedReader.readLine())!= null)
