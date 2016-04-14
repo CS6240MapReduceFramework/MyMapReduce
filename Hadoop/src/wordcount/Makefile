@@ -3,6 +3,6 @@ all: $(wildcard *.java)
 	sbt publish-local
 
 clean:
-	rm -rf project target
+	rm -rf target
 
 .PHONY: all clean
