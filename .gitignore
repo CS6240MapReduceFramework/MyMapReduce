@@ -5,5 +5,5 @@
 *.iml
 Hadoop/.idea
 =======
-Hadoop/bin/WordCount/*.class
+Hadoop/bin/
 >>>>>>> kaushik
