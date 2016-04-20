@@ -1,6 +1,7 @@
 secGroup="launch-wizard-1"
 keyPair="kaushikfinaaws"
 noOfInst=$1
+declare -a instancesArray
 
 echo "creating "$noOfInst" instances"
 touch instances.txt
@@ -9,7 +10,7 @@ i=0
 
 while [ $i -lt $noOfInst ];
 do
-	instancesArray[i]=$(aws ec2 run-instances --image-id ami-08111162 --security-group-ids $secGroup --count 1 --instance-type t2.micro --key-name $keyPair --query 'Instances[0].InstanceId')
+	instancesArray[$i]=$(aws ec2 run-instances --image-id ami-08111162 --security-group-ids $secGroup --count 1 --instance-type t2.micro --key-name $keyPair --query 'Instances[0].InstanceId')
 	i=$((i+1))
 done
 
