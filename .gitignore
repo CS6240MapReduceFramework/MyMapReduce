@@ -6,4 +6,5 @@ Hadoop/.idea
 Hadoop/bin
 *.properties
 *.jar
-
+*.pem
+*.csv

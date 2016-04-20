@@ -1,4 +1,4 @@
-package main;
+package client;
 
 import java.io.*;
 import java.lang.*;
@@ -69,7 +69,7 @@ public class WebClient {
     */ 
     public static void main(String[] args) throws IOException {
 
-    	if(args.length != 3)
+    	if(args.length != 4)
         {
             System.out.println("Not enough arguments passed");
             System.exit(1);
@@ -78,6 +78,7 @@ public class WebClient {
         String input_file_bucket = args[0];
         String output_file_bucket = args[1];
         String instances_file = args[2];
+        String programName = args[3];
 
         String[] input_s3path=input_file_bucket.split("//")[1].split("/");
         input_bucket = input_s3path[0];
@@ -97,6 +98,9 @@ public class WebClient {
         int chunk_size = files.size()/instances_num;
         int remaining_chunk_size = files.size() % instances_num;
 
+        /*Divide the input bucket into <no of instances> folders*/
+
+
         int index = 0;
         int count = 0;
         TextSocket[] connections=new TextSocket[instances_num];
@@ -110,80 +114,51 @@ public class WebClient {
             System.out.println("Establishing connection to: "+instance_ip);
             TextSocket conn = new TextSocket(instance_ip, 3002);
             connections[count-1]=conn;
+            //Send application program name
+            conn.putln(programName);
+
+            //send corresponding folder in s3 for this instance
             conn.putln(input_bucket);
-            conn.putln(input_file);
+           
+           //Send the same output folder for all instances
             conn.putln(output_bucket);
-            conn.putln(output_file);
-            conn.putln(count+"");
-            int i;
 
-            int jaffa = 0;
-            for(i=index; i < index+chunk_size; i++)
-            {
-                conn.putln(files.get(i));            
-                System.out.println("sending from client... "+files.get(i));
-                jaffa++;
-            }
-            
-            // send the reamaining files to last instance
-            if(count == instances_num)
-            {
-                for(i=index; i < index+remaining_chunk_size; i++)
-                {
-                    conn.putln(files.get(i));            
-                   // System.out.println(files.get(i));
-                    jaffa++;
-                }
+            conn.putln("MAPPER_START");
 
-            }
 
-            index = i; 
             conn.putln("");//Marking the end
 
-            System.out.println("End of an instance "+ jaffa);
+            System.out.println("Program started on"+instance_ip);
         }
-        System.out.println("Before for");
+
+        //Wait for mapper completion on all instances
         for(int i=0;i<instances_num;i++)
         {
-            System.out.println("Closed: "+ i);
             String hShake=connections[i].getln();
-            System.out.println("AClosed: "+ i);
+            System.out.println("MAPPER COMPLETED ON: "+ i);
+        }        
+
+
+        //Start reducer
+        for(int i=0;i<instances_num;i++)
+        {
+            connections[i].putln("REDUCER_START");
+            System.out.println("REDUCER STARTED ON: "+ i);
+        }      
+
+
+
+        for(int i=0;i<instances_num;i++)
+        {
+            String hShake=connections[i].getln();
+            System.out.println("REDUCER COMPLETED ON : "+ i);
             connections[i].close();
 
         }  
-        System.out.println("after for");   
 
-        //Sorting at client side begin
-
-        gatherOutputFromS3(output_bucket,output_file);
-        sortRecords();
-        writeOutput();            
+       // gatherOutputFromS3(output_bucket,output_file);
     }
 
-
-    public static void sortRecords() {
-
-        Collections.sort(outputRecords,new Comparator<String>(){
-                public int compare(String p1, String p2) {
-                    Integer t1=Integer.parseInt(p1.split("\t")[0]);
-                    Integer t2=Integer.parseInt(p2.split("\t")[0]);
-                    return t2.compareTo(t1);
-                }
-            });
-    }
-
-    public static void writeOutput() throws IOException
-    {
-        File outFile = new File("topten.txt");
-        FileWriter fstream = new FileWriter(outFile);
-        BufferedWriter out = new BufferedWriter(fstream);
-
-        for (int i=0;i<10;i++)
-        {
-            out.write(outputRecords.get(i)+"\n");
-            out.flush();   
-        }
-    }
 
     private static void gatherOutputFromS3(String bucket,String prefix)
     {
