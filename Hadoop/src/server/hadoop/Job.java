@@ -1,6 +1,7 @@
 package hadoop;
 
-import java.io.BufferedReader;
+import java.io.*;
+
 import com.amazonaws.*;
 import org.apache.commons.logging.*;
 import com.amazonaws.auth.*;
@@ -18,13 +19,10 @@ import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.Inet4Address;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -48,6 +46,10 @@ public class Job {
 	public double mapperPercentageComplete = 0.00d;
 	public Configuration conf;
 	public File[] partFiles;
+
+	static private AWSCredentials credentials = new BasicAWSCredentials("***", "***");
+	static private AmazonS3 s3Client = new AmazonS3Client(credentials);
+
 
 	public String getJobname() {
 		return jobname;
@@ -122,7 +124,7 @@ public class Job {
 		Context reduceContext = new Context();
 		String part_output_file = job.conf.prop.getProperty("OUTPUT_DIR")+"part-r-00000";
 		reduceContext.setup(part_output_file);
-		HashMap<String, ArrayList<Integer>> wordMap = new HashMap<>();
+//		HashMap<String, ArrayList<Integer>> wordMap = new HashMap<>();
 		
 		String tempDir = job.conf.prop.getProperty("TEMP_DIR");
 		File tempFiles = new File(tempDir);
@@ -136,7 +138,7 @@ public class Job {
 			String line = null;
 			while((line = bufferedReader.readLine())!= null)
 			{
-				String[] lines = line.split(" ");
+				String[] lines = line.split("\t");
 				if(wordMap.containsKey(lines[0]))
 				{
 					ArrayList<Integer> list = wordMap.get(lines[0]);
@@ -247,8 +249,9 @@ public class Job {
 		
 
 		int port = 3002;
-
+		String ip = InetAddress.getLocalHost().getHostAddress();
         TextSocket.Server svr = new TextSocket.Server(port);
+
         TextSocket conn;
 
         while (null != (conn = svr.accept())) {
@@ -270,15 +273,39 @@ public class Job {
 
             conn.putln("MAPPER_COMPLETE");
 
+			//Copy the temp mapper file to s3
+			S3Object s3object = new S3Object();
+			try
+			{
+				System.out.println("Uploading a temp file to S3 from a EC2 instance\n");
+
+				TransferManager tx = new TransferManager(credentials);
+				Upload myUpload = tx.uploadDirectory(output_bucket, ip, ip+"/",true);
+
+			}
+			catch(AmazonServiceException ase)
+			{
+				System.out.println( "AmazonServiceException" );
+				ase.printStackTrace();
+			}
+			catch(AmazonClientException ace)
+			{
+				System.out.println( "AmazonClientException" );
+				ace.printStackTrace();
+			}
+			catch(Exception e)
+			{
+				System.out.println("Excepton");
+				e.printStackTrace();
+			}
+
             if(conn.getln().equals("REDUCER_START"))
             {
-            	reducerTask();
+//            	reducerTask();
             }            
-
 
             conn.putln("REDUCER_COMPLETE");
 
-            
             System.out.println("Closing socket...");
             conn.close();
             svr.close();
