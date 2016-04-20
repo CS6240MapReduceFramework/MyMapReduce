@@ -17,11 +17,13 @@ public class WordCount {
 		
 		public void map(Object key, String value, Context context) throws IOException
 		{
+
+			String input = value.replaceAll("[^a-zA-Z0-9]","");
 			
 			StringTokenizer tokens = new StringTokenizer(value, " ");
 			while(tokens.hasMoreTokens())
 			{
-				word = tokens.nextToken();
+				word = tokens.nextToken().trim();
 				context.write(word,count);
 			}
 		}
@@ -49,9 +51,9 @@ public class WordCount {
 		try
 		{
 			Configuration conf = new Configuration();
-			String propertiesFile = "/home/kaushikveluru/Documents/Git/MyMapReduce/Hadoop/src/wordcount/config.properties";
+//			String propertiesFile = "/home/kaushikveluru/Documents/Git/MyMapReduce/Hadoop/src/wordcount/config.properties";
 			
-			conf.loadProperties(propertiesFile);
+//			conf.loadProperties(propertiesFile);
 			
 			job = Job.getInstance(conf,"Word Count");
 			

@@ -138,6 +138,8 @@ public class WebClient {
             System.out.println("MAPPER COMPLETED ON: "+ i);
         }        
 
+        //Copy and merge temp files to S3
+
 
         //Start reducer
         for(int i=0;i<instances_num;i++)
