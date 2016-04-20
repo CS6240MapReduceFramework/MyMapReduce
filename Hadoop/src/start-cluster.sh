@@ -3,16 +3,24 @@ keyPair="kaushikfinaaws"
 noOfInst=$1
 
 echo "creating "$noOfInst" instances"
-
 touch instances.txt
 echo $noOfInst>instances.txt
 i=0
 
 while [ $i -lt $noOfInst ];
 do
-	insId=$(aws ec2 run-instances --image-id ami-08111162 --security-group-ids $secGroup --count 1 --instance-type t2.micro --key-name $keyPair --query 'Instances[0].InstanceId')
-	sleep 100
+	instancesArray[i]=$(aws ec2 run-instances --image-id ami-08111162 --security-group-ids $secGroup --count 1 --instance-type t2.micro --key-name $keyPair --query 'Instances[0].InstanceId')
+	i=$((i+1))
+done
 
+
+sleep 100
+i=0
+
+while [ $i -lt $noOfInst ];
+do
+	insId=${instancesArray[i]}
+	echo $insId
 	insId="${insId%\"}"
 	insId="${insId#\"}"
 
