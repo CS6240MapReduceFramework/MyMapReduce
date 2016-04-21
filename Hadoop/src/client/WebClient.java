@@ -30,19 +30,22 @@ public class WebClient {
 	static private AmazonS3 s3Client = new AmazonS3Client(credentials);
 	static String inputBucket;
 
+
+	/*
+	 * Fetches the list of file names in s3://<inputBucket>/input folder
+	 * Input Arguments: nil
+	 * Returns: ArrayList<String>  - List of file names in the given s3 folder
+	 */
 	public static ArrayList<String> getFilesList()
 	{
 		ArrayList<String> files = new ArrayList<String>();
 		try
 		{
-
 			ListObjectsRequest listObjectsRequest = new ListObjectsRequest().withBucketName(inputBucket).withPrefix("input/");
 			ObjectListing objectListing;
 
-
 			do {
 				objectListing = s3Client.listObjects(listObjectsRequest);
-				//System.out.println("size of climate folder: "+ objectListing.getObjectSummaries());
 
 				for (S3ObjectSummary objectSummary : objectListing.getObjectSummaries()) {
 					if(!objectSummary.getKey().equals("input/"))
@@ -68,18 +71,25 @@ public class WebClient {
 		}
 
 	}
+	
 	/* WebClient takes in 3 arguments: 
 
-        args[0] = Input file bucket
-        args[1] = Output file bucket
-        args[2] = Instances.txt
+        args[0] = Input file bucket   	Ex: s3://<inputBucket>/input
+        args[1] = Output file bucket	Ex: s3://<outputBucket>/output
+        args[2] = Instances.txt		- 	A file with list of instances created by start-cluster.sh and their details
+        args[3] = Program name		- 	Should match with the application name in the server. Ex: WordCount. Not Word Count
 	 */ 
 	public static void main(String[] args) throws IOException {
 
 		if(args.length != 4)
 		{
+			
 			System.out.println("Not enough arguments passed");
 			System.exit(1);
+		}
+		else
+		{
+			//TODO: displayCorrectUsage();
 		}
 
 		String inputDataLocation = args[0];
@@ -97,6 +107,7 @@ public class WebClient {
 
 
 		//Read the instances.txt file 
+		System.out.println("Reading instances.txt file");
 		Scanner sc = new Scanner(new File(instancesFile));
 		int instances_num = Integer.parseInt(sc.nextLine());
 		System.out.println("Instances count: "+instances_num);
@@ -104,30 +115,26 @@ public class WebClient {
 
 		int count = 0;
 
-		String instance_ip="";
+		String ips[] = new String[instances_num];
+		String instanceIp="";
 		TextSocket[] connections=new TextSocket[instances_num];
+		
+		//TODO: Convert this sequential code to parallel using Threads
 		while(sc.hasNextLine())
 		{   
 			String[] line = sc.nextLine().split(";");
 			String instance_id = line[0];
-			instance_ip = line[1];
+			instanceIp = line[1];
+			ips[count] = instanceIp;
 
-			System.out.println("Establishing connection to: "+instance_ip);
-			TextSocket conn = new TextSocket(instance_ip, 3002);
+			System.out.println("Establishing connection to: "+instanceIp);
+			TextSocket conn = new TextSocket(instanceIp, 3002);
+			
+			System.out.println("Connection established..");
 			connections[count]=conn;
-
-			/*			try
-			{
-				s3Client.putObject(new PutObjectRequest(inputBucket, inputFolderInBucket, instanceFolder));
-			}
-			catch (AmazonServiceException ase) {
-	            System.out.println("Error Message:    " + ase.getMessage());
-	        }
-			catch (AmazonClientException ace) {
-	            System.out.println("Error Message: " + ace.getMessage());
-	        }
-			 */			
-
+			
+			count++;
+			
 			//Send application program name
 			conn.putln(programName);
 
@@ -135,15 +142,12 @@ public class WebClient {
 			conn.putln(inputBucket);
 
 			//send instance ip
-			conn.putln(instance_ip);
+			conn.putln(instanceIp);
 
 			//Send the same output folder for all instances
 			conn.putln(outputBucket);
 
-
-			//conn.putln("");//Marking the end
-
-			System.out.println("Program started on"+instance_ip);
+			System.out.println("Program started on"+instanceIp);
 		}
 
 
@@ -160,10 +164,10 @@ public class WebClient {
 		for(int i=0;i<files.size();i++)
 		{
 			try {
-				System.out.println("File being copied from : "+files.get(i)+" to :"+instance_ip+"/"+files.get(i));
+				System.out.println("File being copied from : "+files.get(i)+" to :"+instanceIp+"/"+files.get(i));
 	            // Copying object
 	            CopyObjectRequest copyObjRequest = new CopyObjectRequest(
-	            		inputBucket, files.get(i), inputBucket, instance_ip+"/"+files.get(i));
+	            		inputBucket, files.get(i), inputBucket, ips[i]+"/"+files.get(i));
 	            System.out.println("Copying object.");
 	            s3Client.copyObject(copyObjRequest);
 	            System.out.println("copied object");
@@ -220,40 +224,7 @@ public class WebClient {
 
 		}  
 
-		// gatherOutputFromS3(output_bucket,output_file);
 	}
-
-
-	/*private static void gatherOutputFromS3(String bucket,String prefix)
-	{
-		S3Object s3object = new S3Object();
-		try
-		{
-			s3object = s3Client.getObject(new GetObjectRequest(bucket, prefix));
-			InputStream is = s3object.getObjectContent();
-			BufferedReader br = new BufferedReader(new InputStreamReader(is));
-			String line = null;
-			while ((line = br.readLine()) != null) {
-				outputRecords.add(line);
-			}
-		}
-		catch(AmazonServiceException ase)
-		{
-			System.out.println( "AmazonServiceException" );
-			ase.printStackTrace();
-		}
-		catch(AmazonClientException ace)
-		{
-			System.out.println( "AmazonClientException" );
-			ace.printStackTrace();
-		}
-		catch(Exception e)
-		{
-			System.out.println("Excepton");
-			e.printStackTrace();
-		}
-	}*/
-
 
 }
 

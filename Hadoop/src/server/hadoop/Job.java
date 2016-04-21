@@ -304,7 +304,7 @@ public class Job {
 
 			System.out.println("Key files from mappers created..");
 			//copy temp files after Mapper to S3
-			uploadToS3(inputBucket, inputFolder+"/tempFiles", inputFolder+"/input");
+			uploadToS3(inputBucket, inputFolder+"/tempFiles",inputFolder+"/tempFiles");
 			
 			
 			conn.putln("MAPPER_COMPLETE");
@@ -315,7 +315,7 @@ public class Job {
 				reducerTask(inputBucket, inputFolder);
 			}            
 
-			uploadToS3(outputBucket, inputFolder+"/output", inputFolder+"/tempFiles");
+			uploadToS3(outputBucket, inputFolder+"/output", inputFolder+"/output");
 			conn.putln("REDUCER_COMPLETE");
 
 			System.out.println("Closing socket...");
