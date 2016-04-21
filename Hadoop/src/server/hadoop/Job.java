@@ -13,6 +13,8 @@ import com.amazonaws.services.s3.*;
 import com.amazonaws.services.s3.model.*;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
+import com.amazonaws.services.s3.transfer.MultipleFileDownload;
+import com.amazonaws.services.s3.transfer.MultipleFileUpload;
 
 import textsock.TextSocket;
 
@@ -49,7 +51,16 @@ public class Job {
 	public Configuration conf;
 	public File[] partFiles;
 
-	static private AWSCredentials credentials = new BasicAWSCredentials("", "");
+	static Properties prop = new Properties();
+	static {
+		try {
+			//Properties file should be within src folder
+			prop.load(new FileInputStream("config.properties"));
+		}catch(Exception e){
+			System.out.println(e.getMessage());
+		}
+	}
+	static private AWSCredentials credentials = new BasicAWSCredentials(prop.getProperty("AWSAccessKeyId"), prop.getProperty("AWSSecretKey"));
 	static private AmazonS3 s3Client = new AmazonS3Client(credentials);
 
 
@@ -166,10 +177,11 @@ public class Job {
 			System.out.println("Uploading files to S3 from a EC2 instance\n");
 
 			TransferManager tx = new TransferManager(credentials);
-			tx.uploadDirectory(bucketName, toS3Folder,from,true);
+			MultipleFileUpload mu =  tx.uploadDirectory(bucketName, toS3Folder,from,true);
 
-			System.out.println("sleeping while uploading to S3");
-			Thread.sleep(20000);
+			System.out.println("Waiting while uploading to S3");
+			mu.waitForCompletion();
+//			Thread.sleep(20000);
 			System.out.println("Temp files uploaded ");
 
 		}
@@ -202,9 +214,10 @@ public class Job {
 				localFolder.mkdirs();
 
 			TransferManager tx = new TransferManager(credentials);
-			tx.downloadDirectory(bucketName, fromS3Folder, localFolder);
+			MultipleFileDownload md = tx.downloadDirectory(bucketName, fromS3Folder, localFolder);
+			//waitForCompletion for download to complete
+			md.waitForCompletion();
 
-			//TODO: waitForCompletion logic should be added here
 
 		}
 		catch(AmazonServiceException ase)
@@ -227,11 +240,6 @@ public class Job {
 	{
 
 		getFileFromS3(inputBucket,instanceIp,"inputlocal");
-
-		
-		//TODO: Remove Thread.sleep and syso once wait for completion logic is done.
-		System.out.println("sleeping while downloading files from S3");
-		Thread.sleep(20000);
 
 		System.out.println("Files downloaded to local from S3 to location: inputlocal/"+instanceIp+"/input");
 

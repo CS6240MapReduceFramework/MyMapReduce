@@ -1,5 +1,5 @@
 secGroup="launch-wizard-1"
-keyPair="kaushikfinaaws"
+keyPair="CCS_AWS_Key"
 noOfInst=$1
 declare -a instancesArray
 
@@ -33,6 +33,7 @@ do
 	echo $insId";"$insIp>>instances.txt
 	echo "scp -i $keyPair.pem instances.txt ec2-user@$insIp:~"
 	scp -i $keyPair.pem server.jar ec2-user@$insIp:~
+	scp -i $keyPair.pem config.properties ec2-user@$insIp:~
 	scp -i $keyPair.pem $keyPair.pem ec2-user@$insIp:~
 	echo "********executing jar"
 
