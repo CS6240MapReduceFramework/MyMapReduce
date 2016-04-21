@@ -26,6 +26,7 @@ import com.amazonaws.services.s3.transfer.Upload;
 public class WebClient {
 
 	public static ArrayList<String> outputRecords = new ArrayList<String>();
+	//TODO: Get the access key and secret key from a config.properties file
 	static private AWSCredentials credentials = new BasicAWSCredentials("", "");
 	static private AmazonS3 s3Client = new AmazonS3Client(credentials);
 	static String inputBucket;
@@ -72,6 +73,77 @@ public class WebClient {
 
 	}
 	
+	
+	public static void divideFilesInS3(int instancesCount,String[] ips)
+	{
+		ArrayList<String> files = getFilesList();    
+
+		int chunk_size = files.size()/instancesCount;
+		int remaining_chunk_size = files.size() % instancesCount;
+
+
+		int index = 0;
+		
+		for(int i=0;i<files.size();i++)
+		{
+			try {
+				System.out.println("File being copied from S3 to ec2 instance");
+	            // Copying object
+	            CopyObjectRequest copyObjRequest = new CopyObjectRequest(
+	            		inputBucket, files.get(i), inputBucket, ips[i]+"/"+files.get(i));
+	            System.out.println("Copying object.");
+	            s3Client.copyObject(copyObjRequest);
+	            System.out.println("copied object");
+	            
+	            //TODO: Replace sleep with waitForCompletion method in copyObject
+	            System.out.println("sleeping for 10000 ms");
+	            
+	            	Thread.sleep(10000);
+	         
+	            
+	        } catch (AmazonServiceException ase) {
+	         
+	            System.out.println("Error Message:    " + ase.getMessage());
+	        
+	        } catch (AmazonClientException ace) {
+	        
+	            System.out.println("Error Message: " + ace.getMessage());
+	        }catch (InterruptedException ioe)
+			{
+	        	System.out.println("error message in threadl.sleep");
+			}
+		}
+
+	}
+	
+	public static void startMappersPhase(TextSocket[] connections) throws IOException
+	{
+		for(TextSocket connection : connections)
+			connection.putln("MAPPER_START");
+	}
+
+	public static void startReducersPhase(TextSocket[] connections) throws IOException
+	{
+		for(TextSocket connection : connections)
+			connection.putln("REDUCER_START");
+	}
+
+	public static void waitForMappersPhaseCompletion(TextSocket[] connections) throws IOException
+	{
+		for(TextSocket connection : connections)
+			connection.getln();
+	}
+
+	public static void closeConnections(TextSocket[] connections) throws IOException
+	{
+		for(TextSocket connection : connections)
+		{
+			connection.getln();
+			connection.close();
+		}
+			
+	}
+
 	/* WebClient takes in 3 arguments: 
 
         args[0] = Input file bucket   	Ex: s3://<inputBucket>/input
@@ -90,6 +162,7 @@ public class WebClient {
 		else
 		{
 			//TODO: displayCorrectUsage();
+			//TODO: exit at this point
 		}
 
 		String inputDataLocation = args[0];
@@ -150,79 +223,15 @@ public class WebClient {
 			System.out.println("Program started on"+instanceIp);
 		}
 
+		divideFilesInS3(instances_num, ips);
+		startMappersPhase(connections);
+		waitForMappersPhaseCompletion(connections);
+		       
+		//TODO: Get files from s3://<inputbucket>/<instanceIp>/tempFiles on all instances and merge the common files
+		//TODO: divide merged files equally for all instances and push to S3 accordingly 
 
-		//Divide files before starting mapper
-
-		ArrayList<String> files = getFilesList();    
-
-		int chunk_size = files.size()/instances_num;
-		int remaining_chunk_size = files.size() % instances_num;
-
-
-		int index = 0;
-		
-		for(int i=0;i<files.size();i++)
-		{
-			try {
-				System.out.println("File being copied from : "+files.get(i)+" to :"+instanceIp+"/"+files.get(i));
-	            // Copying object
-	            CopyObjectRequest copyObjRequest = new CopyObjectRequest(
-	            		inputBucket, files.get(i), inputBucket, ips[i]+"/"+files.get(i));
-	            System.out.println("Copying object.");
-	            s3Client.copyObject(copyObjRequest);
-	            System.out.println("copied object");
-	            
-	            System.out.println("sleeping for 10000 ms");
-	            
-	            	Thread.sleep(10000);
-	         
-	            
-	        } catch (AmazonServiceException ase) {
-	         
-	            System.out.println("Error Message:    " + ase.getMessage());
-	        
-	        } catch (AmazonClientException ace) {
-	        
-	            System.out.println("Error Message: " + ace.getMessage());
-	        }catch (InterruptedException ioe)
-			{
-	        	System.out.println("error message in threadl.sleep");
-			}
-		}
-
-
-		for(int i=0;i<instances_num;i++)
-		{
-			connections[i].putln("MAPPER_START");
-		}
-
-
-		//Wait for mapper completion on all instances
-		for(int i=0;i<instances_num;i++)
-		{
-			connections[i].getln();
-			System.out.println("MAPPER COMPLETED ON: "+ i);
-		}        
-
-		//Copy and merge temp files to S3
-
-
-		//Start reducer
-		for(int i=0;i<instances_num;i++)
-		{
-			connections[i].putln("REDUCER_START");
-			System.out.println("REDUCER STARTED ON: "+ i);
-		}      
-
-
-
-		for(int i=0;i<instances_num;i++)
-		{
-			connections[i].getln();
-			System.out.println("REDUCER COMPLETED ON : "+ i);
-			connections[i].close();
-
-		}  
+		startReducersPhase(connections);
+		closeConnections(connections);
 
 	}
 
