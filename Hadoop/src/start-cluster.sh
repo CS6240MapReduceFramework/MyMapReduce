@@ -1,5 +1,5 @@
 secGroup="launch-wizard-1"
-keyPair="CCS_AWS_Key"
+keyPair="kaushikfinaaws"
 noOfInst=$1
 declare -a instancesArray
 

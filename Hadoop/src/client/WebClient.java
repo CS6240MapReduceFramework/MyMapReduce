@@ -5,8 +5,6 @@ import java.lang.*;
 import textsock.TextSocket;
 import java.util.*;
 
-import javax.swing.plaf.SliderUI;
-
 import com.amazonaws.auth.*;
 import com.amazonaws.services.s3.*;
 import com.amazonaws.services.s3.model.*;
@@ -26,8 +24,17 @@ import com.amazonaws.services.s3.transfer.Upload;
 public class WebClient {
 
 	public static ArrayList<String> outputRecords = new ArrayList<String>();
-	//TODO: Get the access key and secret key from a config.properties file
-	static private AWSCredentials credentials = new BasicAWSCredentials("", "");
+	
+	static Properties prop = new Properties();
+	static {
+		try {
+			//Properties file should be within src folder
+			prop.load(new FileInputStream("../config.properties"));
+		}catch(Exception e){
+			System.out.println(e.getMessage());
+		}
+	}
+	static private AWSCredentials credentials = new BasicAWSCredentials(prop.getProperty("AWSAccessKeyId"), prop.getProperty("AWSSecretKey"));
 	static private AmazonS3 s3Client = new AmazonS3Client(credentials);
 	static String inputBucket;
 
@@ -128,6 +135,7 @@ public class WebClient {
 
 	public static void startReducersPhase(TextSocket[] connections) throws IOException
 	{
+		System.out.println("sending REDUCER_START signal to all instances");
 		for(TextSocket connection : connections)
 			connection.putln("REDUCER_START");
 	}
@@ -140,10 +148,52 @@ public class WebClient {
 
 	public static void closeConnections(TextSocket[] connections) throws IOException
 	{
+		System.out.println("REDUER_COMPLETE signal receieved. Closing all connections");
 		for(TextSocket connection : connections)
 		{
 			connection.getln();
 			connection.close();
+		}
+		System.out.println("All connections closed successfully!");
+
+	}
+	
+	public static void downloadOutputPartFilesFromS3(String[] ips,String outputBucket)
+	{
+		try
+		{
+
+			//TODO: Remove hard-coding of the output folder
+			File localFolder = new File("FinalOutput");
+			if(!localFolder.exists())
+				localFolder.mkdirs();
+
+			for(int i=0;i<ips.length; i++)
+			{
+				TransferManager tx = new TransferManager(credentials);
+				tx.downloadDirectory(outputBucket, "output", localFolder);
+				//TODO: Add waitForCompletion logic here
+				System.out.println("sleeping while downloading all part output files");
+				Thread.sleep(5000);
+			}
+			
+			System.out.println("All output part files from S3://<outputBucket>/output downloaded");
+
+		}
+		catch(AmazonServiceException ase)
+		{
+			System.out.println( "AmazonServiceException" );
+			ase.printStackTrace();
+		}
+		catch(AmazonClientException ace)
+		{
+			System.out.println( "AmazonClientException" );
+			ace.printStackTrace();
+		}
+		catch(Exception e)
+		{
+			System.out.println("Excepton");
+			e.printStackTrace();
 		}
 
 	}
@@ -251,9 +301,6 @@ public class WebClient {
 
 			count++;
 
-			//Send application program name
-			conn.putln(programName);
-
 			//send corresponding folder in s3 for this instance
 			conn.putln(inputBucket);
 
@@ -276,6 +323,8 @@ public class WebClient {
 
 		startReducersPhase(connections);
 		closeConnections(connections);
+		
+		downloadOutputPartFilesFromS3(ips,outputBucket);
 
 	}
 
