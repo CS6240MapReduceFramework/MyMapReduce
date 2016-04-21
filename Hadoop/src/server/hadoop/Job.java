@@ -101,7 +101,7 @@ public class Job {
 	}
 
 
-	 	public void reducerTask(String inputBucket,String inputFolder) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, IOException
+	 	public void reducerTask(String inputBucket,String instanceIp) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, IOException
 	 	{
 
 
@@ -111,13 +111,15 @@ public class Job {
 	 		cArgs[2] = Context.class;
 	 		Method reduceMethod = job.reducerCls.getMethod("reduce",cArgs);
 	 		Context reduceContext = new Context();
-	 		reduceContext.foldername = inputFolder+"/output";
+	 		reduceContext.foldername = instanceIp+"/output";
 
 	 		HashMap<String,ArrayList<Integer>> wordMap = new HashMap<String,ArrayList<Integer>>();
 	 		
-	 		File tempFiles = new File(inputFolder+"/tempFiles");
+	 		File tempFiles = new File(instanceIp+"/tempFiles");
 	 		job.partFiles = tempFiles.listFiles();
 
+	 		
+	 		//TODO: This logic of writing into a HashMap should be changed
 	 		for(int i=0; i<job.partFiles.length;i++)
 	 		{
 	 			FileReader fileReader = new FileReader(job.partFiles[i]);
@@ -202,6 +204,7 @@ public class Job {
 			TransferManager tx = new TransferManager(credentials);
 			tx.downloadDirectory(bucketName, fromS3Folder, localFolder);
 
+			//TODO: waitForCompletion logic should be added here
 
 		}
 		catch(AmazonServiceException ase)
@@ -220,15 +223,17 @@ public class Job {
 			e.printStackTrace();
 		}
 	}
-	public void mapperTask(String inputBucket, String input_folder) throws NoSuchMethodException, SecurityException, IOException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, InterruptedException, Exception
+	public void mapperTask(String inputBucket, String instanceIp) throws NoSuchMethodException, SecurityException, IOException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, InterruptedException, Exception
 	{
 
-		getFileFromS3(inputBucket,input_folder,"inputlocal");
+		getFileFromS3(inputBucket,instanceIp,"inputlocal");
 
+		
+		//TODO: Remove Thread.sleep and syso once wait for completion logic is done.
 		System.out.println("sleeping while downloading files from S3");
 		Thread.sleep(20000);
 
-		System.out.println("Files downloaded to local from S3 to location: inputlocal/"+input_folder+"/input");
+		System.out.println("Files downloaded to local from S3 to location: inputlocal/"+instanceIp+"/input");
 
 		String line = null;
 		Class[] cArgs = new Class[3];
@@ -240,15 +245,15 @@ public class Job {
 		Method mapMethod = job.mapperCls.getMethod("map",cArgs);
 
 		Context mapContext = new Context();
-		mapContext.foldername = input_folder+"/tempFiles";
+		mapContext.foldername = instanceIp+"/tempFiles";
 
 
-		File inputDir = new File("inputlocal/"+input_folder+"/input");
+		File inputDir = new File("inputlocal/"+instanceIp+"/input");
 
 		System.out.println("input file path: "+inputDir.getAbsolutePath());
 
 
-		System.out.println("for each file in inputlocal/"+input_folder+"/input:");
+		System.out.println("for each file in inputlocal/"+instanceIp+"/input:");
 		for(File inputFile : inputDir.listFiles())
 		{
 			FileReader fileReader = new FileReader(inputFile);
@@ -281,30 +286,30 @@ public class Job {
 			System.out.println("Server is listening....");
 
 			String programName = conn.getln();
-			System.out.println("program name :"+ programName);
+			//System.out.println("program name :"+ programName);
 
 			String inputBucket = conn.getln();
-			System.out.println("Input bucket : "+ inputBucket);
+			//System.out.println("Input bucket : "+ inputBucket);
 
 			//the instance ip address sent from the client is the input folder for this instance
-			String inputFolder = conn.getln();
-			System.out.println("input folder (ip address): "+ inputFolder);
+			String instanceIp = conn.getln();
+			//System.out.println("input folder (ip address): "+ inputFolder);
 
 
 			String outputBucket = conn.getln();
-			System.out.println("output bucket: "+outputBucket);
+			//System.out.println("output bucket: "+outputBucket);
 
 
 			String command = conn.getln();
 			if(command.equals("MAPPER_START"))
-				mapperTask(inputBucket,inputFolder);
+				mapperTask(inputBucket,instanceIp);
 			else
 				System.out.println("Expected Command: MAPPER_START. Received command: "+command);
 
 
 			System.out.println("Key files from mappers created..");
 			//copy temp files after Mapper to S3
-			uploadToS3(inputBucket, inputFolder+"/tempFiles",inputFolder+"/tempFiles");
+			uploadToS3(inputBucket, instanceIp+"/tempFiles",instanceIp+"/tempFiles");
 			
 			
 			conn.putln("MAPPER_COMPLETE");
@@ -312,10 +317,10 @@ public class Job {
 
 			if(conn.getln().equals("REDUCER_START"))
 			{
-				reducerTask(inputBucket, inputFolder);
+				reducerTask(inputBucket, instanceIp);
 			}            
 
-			uploadToS3(outputBucket, inputFolder+"/output", inputFolder+"/output");
+			uploadToS3(outputBucket, instanceIp+"/output", instanceIp+"/output");
 			conn.putln("REDUCER_COMPLETE");
 
 			System.out.println("Closing socket...");
