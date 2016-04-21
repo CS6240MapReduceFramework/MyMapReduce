@@ -72,8 +72,8 @@ public class WebClient {
 		}
 
 	}
-	
-	
+
+
 	public static void divideFilesInS3(int instancesCount,String[] ips)
 	{
 		ArrayList<String> files = getFilesList();    
@@ -82,40 +82,44 @@ public class WebClient {
 		int remaining_chunk_size = files.size() % instancesCount;
 
 
-		int index = 0;
-		
+		int instance = 0;
+
 		for(int i=0;i<files.size();i++)
 		{
 			try {
+
+				if(instance!=instancesCount)
+					instance = i/chunk_size;
+
 				System.out.println("File being copied from S3 to ec2 instance");
-	            // Copying object
-	            CopyObjectRequest copyObjRequest = new CopyObjectRequest(
-	            		inputBucket, files.get(i), inputBucket, ips[i]+"/"+files.get(i));
-	            System.out.println("Copying object.");
-	            s3Client.copyObject(copyObjRequest);
-	            System.out.println("copied object");
-	            
-	            //TODO: Replace sleep with waitForCompletion method in copyObject
-	            System.out.println("sleeping for 10000 ms");
-	            
-	            	Thread.sleep(10000);
-	         
-	            
-	        } catch (AmazonServiceException ase) {
-	         
-	            System.out.println("Error Message:    " + ase.getMessage());
-	        
-	        } catch (AmazonClientException ace) {
-	        
-	            System.out.println("Error Message: " + ace.getMessage());
-	        }catch (InterruptedException ioe)
+				// Copying object
+				CopyObjectRequest copyObjRequest = new CopyObjectRequest(
+						inputBucket, files.get(i), inputBucket, ips[instance]+"/"+files.get(i));
+				System.out.println("Copying object.");
+				s3Client.copyObject(copyObjRequest);
+				System.out.println("copied object");
+
+				//TODO: Replace sleep with waitForCompletion method in copyObject
+				System.out.println("sleeping for 10000 ms");
+
+				Thread.sleep(10000);
+
+
+			} catch (AmazonServiceException ase) {
+
+				System.out.println("Error Message:    " + ase.getMessage());
+
+			} catch (AmazonClientException ace) {
+
+				System.out.println("Error Message: " + ace.getMessage());
+			}catch (InterruptedException ioe)
 			{
-	        	System.out.println("error message in threadl.sleep");
+				System.out.println("error message in threadl.sleep");
 			}
 		}
 
 	}
-	
+
 	public static void startMappersPhase(TextSocket[] connections) throws IOException
 	{
 		for(TextSocket connection : connections)
@@ -141,7 +145,46 @@ public class WebClient {
 			connection.getln();
 			connection.close();
 		}
+
+	}
+
+	public static void downloadIntermediateFilesFromS3(String[] ips)
+	{
+		try
+		{
+
+			File localFolder = new File("allTempFiles");
+			if(!localFolder.exists())
+				localFolder.mkdirs();
+
+			for(int i=0;i<ips.length; i++)
+			{
+				TransferManager tx = new TransferManager(credentials);
+				tx.downloadDirectory(inputBucket, ips[i]+"/tempFiles", localFolder);
+				//TODO: Add waitForCompletion logic here
+				System.out.println("sleeping while downloading all temp files");
+				Thread.sleep(5000);
+			}
 			
+			System.out.println("All temp files from all instances downloaded");
+
+
+		}
+		catch(AmazonServiceException ase)
+		{
+			System.out.println( "AmazonServiceException" );
+			ase.printStackTrace();
+		}
+		catch(AmazonClientException ace)
+		{
+			System.out.println( "AmazonClientException" );
+			ace.printStackTrace();
+		}
+		catch(Exception e)
+		{
+			System.out.println("Excepton");
+			e.printStackTrace();
+		}
 	}
 
 	/* WebClient takes in 3 arguments: 
@@ -155,7 +198,7 @@ public class WebClient {
 
 		if(args.length != 4)
 		{
-			
+
 			System.out.println("Not enough arguments passed");
 			System.exit(1);
 		}
@@ -191,7 +234,7 @@ public class WebClient {
 		String ips[] = new String[instances_num];
 		String instanceIp="";
 		TextSocket[] connections=new TextSocket[instances_num];
-		
+
 		//TODO: Convert this sequential code to parallel using Threads
 		while(sc.hasNextLine())
 		{   
@@ -202,12 +245,12 @@ public class WebClient {
 
 			System.out.println("Establishing connection to: "+instanceIp);
 			TextSocket conn = new TextSocket(instanceIp, 3002);
-			
+
 			System.out.println("Connection established..");
 			connections[count]=conn;
-			
+
 			count++;
-			
+
 			//Send application program name
 			conn.putln(programName);
 
@@ -226,8 +269,9 @@ public class WebClient {
 		divideFilesInS3(instances_num, ips);
 		startMappersPhase(connections);
 		waitForMappersPhaseCompletion(connections);
-		       
-		//TODO: Get files from s3://<inputbucket>/<instanceIp>/tempFiles on all instances and merge the common files
+
+		//TODO: Downloading files completed. TODO merge the common files
+		downloadIntermediateFilesFromS3(ips);
 		//TODO: divide merged files equally for all instances and push to S3 accordingly 
 
 		startReducersPhase(connections);

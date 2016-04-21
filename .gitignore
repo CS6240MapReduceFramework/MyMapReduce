@@ -8,3 +8,4 @@ Hadoop/bin
 *.jar
 *.pem
 *.csv
+Hadoop/src/client/allTempFiles/
