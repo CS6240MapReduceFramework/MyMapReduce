@@ -35,7 +35,7 @@ public class ReducerThread implements Runnable{
 		Method reduceMethod = job.reducerCls.getMethod("reduce",cArgs);
 		Context reduceContext = new Context();
 		String part_output_file = job.conf.prop.getProperty("OUTPUT_DIR")+"part-r-0000"+Thread.currentThread().getName();
-		reduceContext.setup(part_output_file);
+		//reduceContext.setup(part_output_file);
 		HashMap<String, ArrayList<Integer>> wordMap = new HashMap<>();
 
 		for(int i=startIndex;i<= endIndex;i++)

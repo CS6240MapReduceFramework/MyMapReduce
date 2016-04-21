@@ -11,6 +11,8 @@ import com.amazonaws.services.ec2.model.RunInstancesResult;
 import com.amazonaws.auth.*;
 import com.amazonaws.services.s3.*;
 import com.amazonaws.services.s3.model.*;
+import com.amazonaws.services.s3.transfer.TransferManager;
+import com.amazonaws.services.s3.transfer.Upload;
 
 import textsock.TextSocket;
 
@@ -47,7 +49,7 @@ public class Job {
 	public Configuration conf;
 	public File[] partFiles;
 
-	static private AWSCredentials credentials = new BasicAWSCredentials("***", "***");
+	static private AWSCredentials credentials = new BasicAWSCredentials("", "");
 	static private AmazonS3 s3Client = new AmazonS3Client(credentials);
 
 
@@ -79,7 +81,7 @@ public class Job {
 		partitionerCls = Class.forName(partitionerClass.getName());
 		partitionerInstance = partitionerCls.newInstance();
 	}
-	
+
 
 	public void setNumReduceTasks(int reduceTasks)
 	{
@@ -98,219 +100,229 @@ public class Job {
 		job.jar = classLoader.loadClass(jarClass.getName());
 	}
 
-	public void cleanDirectory(File directory)
-	{
-		for(File f : directory.listFiles())
-			f.delete();
 
-	}
-	public void cleanUpFiles()
-	{
-		cleanDirectory(new File(job.conf.prop.getProperty("TEMP_DIR")));
-		cleanDirectory(new File(job.conf.prop.getProperty("OUTPUT_DIR")));
-
-	}
-	
-	
-	public void reducerTask() throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, IOException
-	{
+	 	public void reducerTask(String inputBucket,String inputFolder) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, IOException
+	 	{
 
 
-		Class[] cArgs = new Class[3];
-		cArgs[0] = String.class;
-		cArgs[1] = ArrayList.class;
-		cArgs[2] = Context.class;
-		Method reduceMethod = job.reducerCls.getMethod("reduce",cArgs);
-		Context reduceContext = new Context();
-		String part_output_file = job.conf.prop.getProperty("OUTPUT_DIR")+"part-r-00000";
-		reduceContext.setup(part_output_file);
-//		HashMap<String, ArrayList<Integer>> wordMap = new HashMap<>();
-		
-		String tempDir = job.conf.prop.getProperty("TEMP_DIR");
-		File tempFiles = new File(tempDir);
-		job.partFiles = tempFiles.listFiles();
+	 		Class[] cArgs = new Class[3];
+	 		cArgs[0] = String.class;
+	 		cArgs[1] = ArrayList.class;
+	 		cArgs[2] = Context.class;
+	 		Method reduceMethod = job.reducerCls.getMethod("reduce",cArgs);
+	 		Context reduceContext = new Context();
+	 		reduceContext.foldername = inputFolder+"/output";
 
-		for(int i=0; i<job.partFiles.length;i++)
-		{
-			FileReader fileReader = new FileReader(job.partFiles[i]);
-			BufferedReader bufferedReader = new BufferedReader(fileReader);
+	 		HashMap<String,ArrayList<Integer>> wordMap = new HashMap<String,ArrayList<Integer>>();
+	 		
+	 		File tempFiles = new File(inputFolder+"/tempFiles");
+	 		job.partFiles = tempFiles.listFiles();
 
-			String line = null;
-			while((line = bufferedReader.readLine())!= null)
-			{
-				String[] lines = line.split("\t");
-				if(wordMap.containsKey(lines[0]))
-				{
-					ArrayList<Integer> list = wordMap.get(lines[0]);
-					list.add(1);
-					wordMap.put(lines[0],list);
-				}
-				else
-				{
-					ArrayList<Integer> list = new ArrayList<Integer>();
-					list.add(1);
-					wordMap.put(lines[0], list);
-				}
+	 		for(int i=0; i<job.partFiles.length;i++)
+	 		{
+	 			FileReader fileReader = new FileReader(job.partFiles[i]);
+	 			BufferedReader bufferedReader = new BufferedReader(fileReader);
+
+	 			String line = null;
+	 			while((line = bufferedReader.readLine())!= null)
+	 			{
+	 				String[] lines = line.split("\t");
+	 				if(wordMap.containsKey(lines[0]))
+	 				{
+	 					ArrayList<Integer> list = wordMap.get(lines[0]);
+	 					list.add(1);
+	 					wordMap.put(lines[0],list);
+	 				}
+	 				else
+	 				{
+	 					ArrayList<Integer> list = new ArrayList<Integer>();
+	 					list.add(1);
+	 					wordMap.put(lines[0], list);
+	 				}
+	 			}
+
+	 			bufferedReader.close();
+
 			}
 
-			bufferedReader.close();
 
-		}
+	 		for(String key : wordMap.keySet())
+	 		{
+	 			reduceMethod.invoke(job.reducerInstance,key,wordMap.get(key),reduceContext);
+	 		}
+	 	}
 
+	 	
+	public static void uploadToS3(String bucketName, String toS3Folder, String fromLocalFolder)
+	{
+		
+		
 
-		for(String key : wordMap.keySet())
+		try
 		{
-			reduceMethod.invoke(job.reducerInstance,key,wordMap.get(key),reduceContext);
+			File from =new File(fromLocalFolder);
+			System.out.println("Uploading files to S3 from a EC2 instance\n");
+
+			TransferManager tx = new TransferManager(credentials);
+			tx.uploadDirectory(bucketName, toS3Folder,from,true);
+
+			System.out.println("sleeping while uploading to S3");
+			Thread.sleep(20000);
+			System.out.println("Temp files uploaded ");
+
+		}
+		catch(AmazonServiceException ase)
+		{
+			System.out.println( "AmazonServiceException" );
+			ase.printStackTrace();
+		}
+		catch(AmazonClientException ace)
+		{
+			System.out.println( "AmazonClientException" );
+			ace.printStackTrace();
+		}
+		catch(Exception e)
+		{
+			System.out.println("Excepton");
+			e.printStackTrace();
+		}
+
+
+		
+	}
+	private static void getFileFromS3(String bucketName, String fromS3Folder, String toLocalFolder)
+	{
+		try
+		{
+
+			File localFolder = new File(toLocalFolder);
+			if(!localFolder.exists())
+				localFolder.mkdirs();
+
+			TransferManager tx = new TransferManager(credentials);
+			tx.downloadDirectory(bucketName, fromS3Folder, localFolder);
+
+
+		}
+		catch(AmazonServiceException ase)
+		{
+			System.out.println( "AmazonServiceException" );
+			ase.printStackTrace();
+		}
+		catch(AmazonClientException ace)
+		{
+			System.out.println( "AmazonClientException" );
+			ace.printStackTrace();
+		}
+		catch(Exception e)
+		{
+			System.out.println("Excepton");
+			e.printStackTrace();
 		}
 	}
+	public void mapperTask(String inputBucket, String input_folder) throws NoSuchMethodException, SecurityException, IOException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, InterruptedException, Exception
+	{
 
-//	private static void getFileFromS3(String input_file)
-//    {
-//        s3object s3object = new S3Object();
-//        try
-//        {
-//            
-//            System.out.println("Input file : "+input_file);
-//            s3object = s3client.getObject(new GetObjectRequest(input_bucket, input_file));
-//            InputStream is = new GZIPInputStream(s3object.getObjectContent());
-//            BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-//            while(true)
-//            {
-//              String line = reader.readLine();
-//              if(line == null) break;
-//              String[] values = parseCSVLine(line);
-//              if(isSane(values[8]))
-//              {
-//                allList.add(clean(values[8])+"\t"+clean(values[0])+"\t"+clean(values[1])+"\t"+clean(values[2])+"\t"+clean(values[9])+"\t"+clean(values[10]));
-//              }
-//            }
-//        }
-//        catch(AmazonServiceException ase)
-//        {
-//          System.out.println( "AmazonServiceException" );
-//          ase.printStackTrace();
-//        }
-//        catch(AmazonClientException ace)
-//        {
-//          System.out.println( "AmazonClientException" );
-//          ace.printStackTrace();
-//        }
-//        catch(Exception e)
-//        {
-//            System.out.println("Excepton");
-//            e.printStackTrace();
-//        }
-//    }
-	public void mapperTask()
-	{
-		System.out.println("mapper task called");
-	}
-	
-	public void mapperTask(File inputDir) throws NoSuchMethodException, SecurityException, IOException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, Exception
-	{
-		
-		
-		
-		
+		getFileFromS3(inputBucket,input_folder,"inputlocal");
+
+		System.out.println("sleeping while downloading files from S3");
+		Thread.sleep(20000);
+
+		System.out.println("Files downloaded to local from S3 to location: inputlocal/"+input_folder+"/input");
+
 		String line = null;
 		Class[] cArgs = new Class[3];
 		cArgs[0] = Object.class;
 		cArgs[1] = String.class;
 		cArgs[2] = Context.class;
-				
+
+		System.out.println("Mapper class instantiated..");
 		Method mapMethod = job.mapperCls.getMethod("map",cArgs);
-		
+
 		Context mapContext = new Context();
-		String temp_map_file = job.conf.prop.getProperty("TEMP_DIR")+"part-temp-file";
-		mapContext.setup(temp_map_file);
-	
+		mapContext.foldername = input_folder+"/tempFiles";
+
+
+		File inputDir = new File("inputlocal/"+input_folder+"/input");
+
+		System.out.println("input file path: "+inputDir.getAbsolutePath());
+
+
+		System.out.println("for each file in inputlocal/"+input_folder+"/input:");
 		for(File inputFile : inputDir.listFiles())
 		{
 			FileReader fileReader = new FileReader(inputFile);
 			BufferedReader bufferedReader = new BufferedReader(fileReader);
-			
+
+			System.out.println("calling map method in mapper task");
 			while((line = bufferedReader.readLine())!= null)
-			{
+			{		
 				mapMethod.invoke(job.mapperInstance,new Object(),line,mapContext);
-				
+
 			}
 			bufferedReader.close();
 		}
-		
-		
 	}
 
 	public void waitForCompletion(Boolean bool) throws NoSuchMethodException, SecurityException, IOException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, Exception
 	{
 
-		//Cleans TEMP_DIR and OUTPUT_DIR
-		//cleanUpFiles();
 
-		
-
+		System.out.println("start - waitForCompletion");
 		int port = 3002;
 		String ip = InetAddress.getLocalHost().getHostAddress();
-        TextSocket.Server svr = new TextSocket.Server(port);
 
-        TextSocket conn;
+		System.out.println("IPAddress of this ec2 instance: "+ip);
+		TextSocket.Server svr = new TextSocket.Server(port);
 
-        while (null != (conn = svr.accept())) {
-        System.out.println("Server is listening....");
-            
+		TextSocket conn;
 
-            String programName = conn.getln();
-            String input_bucket = conn.getln();
+		while (null != (conn = svr.accept())) {
+			System.out.println("Server is listening....");
 
-           // getFileFromS3(input_bucket);
-            String output_bucket = conn.getln();
-        
+			String programName = conn.getln();
+			System.out.println("program name :"+ programName);
 
-            if(conn.getln().equals("MAPPER_START"))
-            {
-                
-            	mapperTask();
-            }
+			String inputBucket = conn.getln();
+			System.out.println("Input bucket : "+ inputBucket);
 
-            conn.putln("MAPPER_COMPLETE");
+			//the instance ip address sent from the client is the input folder for this instance
+			String inputFolder = conn.getln();
+			System.out.println("input folder (ip address): "+ inputFolder);
 
-			//Copy the temp mapper file to s3
-			S3Object s3object = new S3Object();
-			try
+
+			String outputBucket = conn.getln();
+			System.out.println("output bucket: "+outputBucket);
+
+
+			String command = conn.getln();
+			if(command.equals("MAPPER_START"))
+				mapperTask(inputBucket,inputFolder);
+			else
+				System.out.println("Expected Command: MAPPER_START. Received command: "+command);
+
+
+			System.out.println("Key files from mappers created..");
+			//copy temp files after Mapper to S3
+			uploadToS3(inputBucket, inputFolder+"/tempFiles", inputFolder+"/input");
+			
+			
+			conn.putln("MAPPER_COMPLETE");
+
+
+			if(conn.getln().equals("REDUCER_START"))
 			{
-				System.out.println("Uploading a temp file to S3 from a EC2 instance\n");
+				reducerTask(inputBucket, inputFolder);
+			}            
 
-				TransferManager tx = new TransferManager(credentials);
-				Upload myUpload = tx.uploadDirectory(output_bucket, ip, ip+"/",true);
+			uploadToS3(outputBucket, inputFolder+"/output", inputFolder+"/tempFiles");
+			conn.putln("REDUCER_COMPLETE");
 
-			}
-			catch(AmazonServiceException ase)
-			{
-				System.out.println( "AmazonServiceException" );
-				ase.printStackTrace();
-			}
-			catch(AmazonClientException ace)
-			{
-				System.out.println( "AmazonClientException" );
-				ace.printStackTrace();
-			}
-			catch(Exception e)
-			{
-				System.out.println("Excepton");
-				e.printStackTrace();
-			}
-
-            if(conn.getln().equals("REDUCER_START"))
-            {
-//            	reducerTask();
-            }            
-
-            conn.putln("REDUCER_COMPLETE");
-
-            System.out.println("Closing socket...");
-            conn.close();
-            svr.close();
-            break;
-        }    
+			System.out.println("Closing socket...");
+			conn.close();
+			svr.close();
+			break;
+		}    
 
 	}
 }

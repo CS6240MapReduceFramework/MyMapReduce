@@ -9,39 +9,42 @@ import java.util.ArrayList;
 import java.util.StringTokenizer;
 
 public class WordCount {
-	
+
 	public static class WordCountMapper extends Mapper
 	{
 		private String word = new String();
 		private Integer count = new Integer(1);
-		
+
 		public void map(Object key, String value, Context context) throws IOException
 		{
 
+			System.out.println("inside map method...");
 			String input = value.replaceAll("[^a-zA-Z0-9]","");
-			
+
 			StringTokenizer tokens = new StringTokenizer(value, " ");
 			while(tokens.hasMoreTokens())
 			{
 				word = tokens.nextToken().trim();
+				System.out.println("writing into context.write");
 				context.write(word,count);
+				System.out.println("written into context");
 			}
 		}
 	}
-	
+
 	public static class WordCountRedcuer extends Reducer
 	{	
 		public void reduce(String key, ArrayList<Integer> values, Context context) throws IOException
 		{
 			int sum = 0;
-		      for (Integer val : values) {
-		        sum += val;
-		      }
-		      context.write(key,sum);
+			for (Integer val : values) {
+				sum += val;
+			}
+			context.write(key,sum);
 		}
-		
+
 	}
-	
+
 	/*
 	 * args[0] - input directory
 	 * */
@@ -51,21 +54,21 @@ public class WordCount {
 		try
 		{
 			Configuration conf = new Configuration();
-//			String propertiesFile = "/home/kaushikveluru/Documents/Git/MyMapReduce/Hadoop/src/wordcount/config.properties";
-			
-//			conf.loadProperties(propertiesFile);
-			
+			//			String propertiesFile = "/home/kaushikveluru/Documents/Git/MyMapReduce/Hadoop/src/wordcount/config.properties";
+
+			//			conf.loadProperties(propertiesFile);
+
 			job = Job.getInstance(conf,"Word Count");
-			
+
 			job.setJarByClass(WordCount.class);
 			job.setMapperClass(WordCountMapper.class);
 			job.setReducerClass(WordCountRedcuer.class);
 			job.setNumReduceTasks(1);
-			 // FileInputFormat.addInputPath(job, args[0]);
-			 // FileOutputFormat.setOutputPath(job,args[1]);
-			
+			// FileInputFormat.addInputPath(job, args[0]);
+			// FileOutputFormat.setOutputPath(job,args[1]);
+
 			job.waitForCompletion(true);
-			
+
 			System.out.println(job.getJobname()+" job completed successfully!");
 		}
 		catch(Exception e)
