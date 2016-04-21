@@ -17,14 +17,11 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.CopyObjectRequest;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
-
-
-
+import com.amazonaws.services.s3.transfer.MultipleFileDownload;
+import com.amazonaws.services.s3.transfer.Copy;
 
 public class WebClient {
 
-	public static ArrayList<String> outputRecords = new ArrayList<String>();
-	
 	static Properties prop = new Properties();
 	static {
 		try {
@@ -34,10 +31,10 @@ public class WebClient {
 			System.out.println(e.getMessage());
 		}
 	}
+	public static ArrayList<String> outputRecords = new ArrayList<String>();
 	static private AWSCredentials credentials = new BasicAWSCredentials(prop.getProperty("AWSAccessKeyId"), prop.getProperty("AWSSecretKey"));
 	static private AmazonS3 s3Client = new AmazonS3Client(credentials);
 	static String inputBucket;
-
 
 	/*
 	 * Fetches the list of file names in s3://<inputBucket>/input folder
@@ -102,15 +99,12 @@ public class WebClient {
 				// Copying object
 				CopyObjectRequest copyObjRequest = new CopyObjectRequest(
 						inputBucket, files.get(i), inputBucket, ips[instance]+"/"+files.get(i));
+
 				System.out.println("Copying object.");
-				s3Client.copyObject(copyObjRequest);
+				TransferManager tx = new TransferManager(credentials);
+				Copy cp = tx.copy(copyObjRequest);
+				cp.waitForCompletion();
 				System.out.println("copied object");
-
-				//TODO: Replace sleep with waitForCompletion method in copyObject
-				System.out.println("sleeping for 10000 ms");
-
-				Thread.sleep(10000);
-
 
 			} catch (AmazonServiceException ase) {
 
@@ -210,10 +204,8 @@ public class WebClient {
 			for(int i=0;i<ips.length; i++)
 			{
 				TransferManager tx = new TransferManager(credentials);
-				tx.downloadDirectory(inputBucket, ips[i]+"/tempFiles", localFolder);
-				//TODO: Add waitForCompletion logic here
-				System.out.println("sleeping while downloading all temp files");
-				Thread.sleep(5000);
+				MultipleFileDownload md = tx.downloadDirectory(inputBucket, ips[i]+"/tempFiles", localFolder);
+				md.waitForCompletion();
 			}
 			
 			System.out.println("All temp files from all instances downloaded");
