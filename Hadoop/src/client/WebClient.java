@@ -49,7 +49,7 @@ public class WebClient {
     public static ArrayList<String> getFilesList(String bucketfolder) {
         ArrayList<String> files = new ArrayList<String>();
         try {
-            ListObjectsRequest listObjectsRequest = new ListObjectsRequest().withBucketName(inputBucket).withPrefix("input/");
+            ListObjectsRequest listObjectsRequest = new ListObjectsRequest().withBucketName(inputBucket).withPrefix(bucketfolder + "/");
             ObjectListing objectListing;
 
             do {
@@ -81,7 +81,7 @@ public class WebClient {
         int chunk_size = files.size() / instancesCount;
         int remaining_chunk_size = files.size() % instancesCount;
 
-
+        System.out.println("Number of files - "+files.size());
         int instance = 0;
 
         for (int i = 0; i < files.size(); i++) {
@@ -90,7 +90,7 @@ public class WebClient {
                 if (instance != instancesCount)
                     instance = i / chunk_size;
 
-                System.out.println("File being copied from S3 to ec2 instance");
+                System.out.println("File being copied from S3 to ec2 instance - "+files.get(i));
                 // Copying object
                 CopyObjectRequest copyObjRequest = new CopyObjectRequest(
                         inputBucket, files.get(i), inputBucket, ips[instance] + "/" + files.get(i));
@@ -207,6 +207,7 @@ public class WebClient {
             TransferManager tx = new TransferManager(credentials);
             MultipleFileUpload mu = tx.uploadDirectory(bucketName, bucketFolder, local, true);
             mu.waitForCompletion();
+            s3Client.deleteObject(new DeleteObjectRequest(bucketName, "output/.DS_Store"));
 
         } catch (AmazonServiceException ase) {
             ase.printStackTrace();
@@ -225,36 +226,38 @@ public class WebClient {
             System.out.println("Folder not found");
         FileWriter fileWriter;
         BufferedWriter bufferedWriter;
-        System.out.println(tempfiles.listFiles().toString());
         //Open all instance folders in allTempFiles
         for (File instance : tempfiles.listFiles()) {
+
+            if(instance.getName().contains("DS_Store")){
+                continue;
+            }
 
             System.out.println("Within folder - " + instance);
 
             //Open each instance folder
             File subFolder = new File(instance.getAbsolutePath() + "/tempFiles");
-            System.out.println(subFolder.listFiles());
+
             //Iterate over all tempfiles in each isntance folder
             for (File tempFile : subFolder.listFiles()) {
 
-                System.out.println("Writing file - " + tempFile.getName());
-
+                if(instance.getName().contains("DS_Store")){
+                    continue;
+                }
                 //Open tempfile for read
                 FileReader tmpFileReader = new FileReader(tempFile);
                 BufferedReader bufferedReader = new BufferedReader(tmpFileReader);
                 String line = "";
 
                 //Open file in parent folder for writing the tempfile
-                File fdir = new File("allTempFiles");
+                File fdir = new File("allTempFiles/merged");
                 if (!fdir.exists())
                     fdir.mkdirs();
 
-                File f = new File("allTempFiles/" + tempFile.getName());
+                File f = new File("allTempFiles/merged/" + tempFile.getName());
 
                 if (!f.exists())
                     f.createNewFile();
-
-                System.out.println("list of files in the dir in context: " + fdir.list());
 
                 //create writer to copy all the content from tempfile to one tempfile in parent folder(true as second property)
                 fileWriter = new FileWriter(f, true);
@@ -360,7 +363,7 @@ public class WebClient {
         mergeIntermediateFilesFromS3();
 
         //Upload to output directory in the input_bucket
-        uploadFilesToS3("allTempFiles", outputBucket, "output");
+        uploadFilesToS3("allTempFiles/merged", outputBucket, "output");
         divideFilesInS3(instances_num, ips,"output");
 
         //TODO: divide merged files equally for all instances and push to S3 accordingly

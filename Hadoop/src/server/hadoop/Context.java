@@ -14,7 +14,7 @@ public class Context {
 
 	public static String foldername;
 
-	public void write(T key, T value) {
+	public void write(Text key, IntWritable value) {
 		String ip ;
 
 		System.out.println("in Context write - key: "+key.get()+" value: "+value.get());
