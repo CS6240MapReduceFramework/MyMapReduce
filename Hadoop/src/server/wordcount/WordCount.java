@@ -11,12 +11,13 @@ import java.util.StringTokenizer;
 public class WordCount {
 
 	//TODO: Add template to Mapper. Example : Mapper<KEYIN, KEYOUT>
-	public static class WordCountMapper extends Mapper
+	public static class WordCountMapper extends Mapper<String,String,String,Integer>
 	{	
 		//TODO: Use Text and IntWritable 
 		private String word = new String();
 		private Integer count = new Integer(1);
 
+		//TODO: Throw error if the given data types doesn't match with the Mapper data types
 		public void map(Object key, String value, Context context) throws IOException
 		{
 
@@ -32,8 +33,9 @@ public class WordCount {
 		}
 	}
 
-	public static class WordCountRedcuer extends Reducer
+	public static class WordCountRedcuer extends Reducer<String, ArrayList<Integer>, String, Integer>
 	{	
+		//TODO: Throw error if the data types doesn't match
 		public void reduce(String key, ArrayList<Integer> values, Context context) throws IOException
 		{
 			int sum = 0;
@@ -58,6 +60,9 @@ public class WordCount {
 			job.setJarByClass(WordCount.class);
 			job.setMapperClass(WordCountMapper.class);
 			job.setReducerClass(WordCountRedcuer.class);
+			//TODO: Implement setOutput
+//			job.setOutputKeyClass(Text.class)
+//			job.setOutputValueClass(Intwritable.class)
 			job.setNumReduceTasks(1);
 			// FileInputFormat.addInputPath(job, args[0]);
 			// FileOutputFormat.setOutputPath(job,args[1]);
