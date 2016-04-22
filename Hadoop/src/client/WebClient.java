@@ -165,10 +165,8 @@ public class WebClient {
 			for(int i=0;i<ips.length; i++)
 			{
 				TransferManager tx = new TransferManager(credentials);
-				tx.downloadDirectory(outputBucket, "output", localFolder);
-				//TODO: Add waitForCompletion logic here
-				System.out.println("sleeping while downloading all part output files");
-				Thread.sleep(5000);
+				MultipleFileDownload md = tx.downloadDirectory(outputBucket, "output", localFolder);
+				md.waitForCompletion();
 			}
 			
 			System.out.println("All output part files from S3://<outputBucket>/output downloaded");
