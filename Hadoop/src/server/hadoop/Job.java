@@ -113,8 +113,10 @@ public class Job {
 	}
 
 
-	public void reducerTask(String inputBucket,String instanceIp) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, IOException
+	public void reducerTask(String outputBucket, String instanceIp) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, IOException
 	{
+
+		getFileFromS3(outputBucket,"output/"+instanceIp,"reducelocal");
 
 		//TODO: How to get data types for reduce method dynamically?
 		Class[] cArgs = new Class[3];
@@ -127,7 +129,7 @@ public class Job {
 
 		HashMap<String,ArrayList<IntWritable>> wordMap = new HashMap<String,ArrayList<IntWritable>>();
 
-		File tempFiles = new File(instanceIp+"/tempFiles");
+		File tempFiles = new File("reducelocal/output/"+instanceIp);
 		job.partFiles = tempFiles.listFiles();
 
 		IntWritable one = new IntWritable(1);
