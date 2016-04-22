@@ -1,6 +1,5 @@
 package wordcount;
 import hadoop.*;
-
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -34,10 +33,10 @@ public class WordCount {
 		}
 	}
 
-	public static class WordCountRedcuer extends Reducer<Text, Iterator<IntWritable>, Text, IntWritable>
+	public static class WordCountRedcuer extends Reducer<Text, CustomIterable, Text, IntWritable>
 	{	
 		//TODO: Throw error if the data types doesn't match
-		public void reduce(Text key, Iterator<IntWritable> values, Context context) throws IOException
+		public void reduce(Text key, CustomIterable values, Context context) throws IOException
 		{
 			IntWritable sum = new IntWritable(0);
 			

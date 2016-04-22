@@ -15,6 +15,9 @@ public class IntWritable {
 	/** Set the value of this IntWritable. */
 	public void set(int value) { this.value = value; }
 
+	/** Set the value of this IntWritable. */
+	public void set(Integer value) { this.value = value; }
+
 	/** Return the value of this IntWritable. */
 	public int get() { return value; }
 

@@ -4,6 +4,7 @@ import java.io.*;
 
 import com.amazonaws.*;
 import org.apache.commons.logging.*;
+import org.apache.commons.io.*;
 import com.amazonaws.auth.*;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.RunInstancesRequest;
@@ -121,56 +122,65 @@ public class Job {
 		//TODO: How to get data types for reduce method dynamically?
 		Class[] cArgs = new Class[3];
 		cArgs[0] = Text.class;
-		cArgs[1] = Iterator.class;
+		cArgs[1] = CustomIterable.class;
 		cArgs[2] = Context.class;
 		Method reduceMethod = job.reducerCls.getMethod("reduce",cArgs);
 		Context reduceContext = new Context();
 		reduceContext.foldername = "output";
 
-		HashMap<String,ArrayList<IntWritable>> wordMap = new HashMap<String,ArrayList<IntWritable>>();
+//		HashMap<String,ArrayList<IntWritable>> wordMap = new HashMap<String,ArrayList<IntWritable>>();
 
 		File tempFiles = new File("reducelocal/"+instanceIp+"/output");
 		job.partFiles = tempFiles.listFiles();
 
 		IntWritable one = new IntWritable(1);
 
+        for(int i=0; i<job.partFiles.length;i++)
+        {
+            Text text = new Text();
+			text.set(job.partFiles[i].getName());
+            Iterator itr = FileUtils.lineIterator(job.partFiles[i], "UTF-8");
+            CustomIterable cIterable = new CustomIterable(itr);
+            reduceMethod.invoke(job.reducerInstance,text,cIterable,reduceContext);
+        }
+
 		//TODO: This logic of writing into a HashMap should be changed
-		for(int i=0; i<job.partFiles.length;i++)
-		{
-			FileReader fileReader = new FileReader(job.partFiles[i]);
-			BufferedReader bufferedReader = new BufferedReader(fileReader);
-
-			
-			String line = null;
-			while((line = bufferedReader.readLine())!= null)
-			{
-				String[] lines = line.split("\t");
-				if(wordMap.containsKey(lines[0]))
-				{
-					ArrayList<IntWritable> list = wordMap.get(lines[0]);
-					list.add(one);
-					wordMap.put(lines[0],list);
-				}
-				else
-				{
-					ArrayList<IntWritable> list = new ArrayList<IntWritable>();
-					list.add(one);
-					wordMap.put(lines[0], list);
-				}
-			}
-			bufferedReader.close();
-		}
-
-		//invoke reduce method for each key
-		for(String key : wordMap.keySet())
-		{
-			Text text = new Text();
-			text.set(key);
-			
-			Iterator<IntWritable> itr = wordMap.get(key).iterator();
-			
-			reduceMethod.invoke(job.reducerInstance,text,itr,reduceContext);
-		}
+//		for(int i=0; i<job.partFiles.length;i++)
+//		{
+//			FileReader fileReader = new FileReader(job.partFiles[i]);
+//			BufferedReader bufferedReader = new BufferedReader(fileReader);
+//
+//
+//			String line = null;
+//			while((line = bufferedReader.readLine())!= null)
+//			{
+//				String[] lines = line.split("\t");
+//				if(wordMap.containsKey(lines[0]))
+//				{
+//					ArrayList<IntWritable> list = wordMap.get(lines[0]);
+//					list.add(one);
+//					wordMap.put(lines[0],list);
+//				}
+//				else
+//				{
+//					ArrayList<IntWritable> list = new ArrayList<IntWritable>();
+//					list.add(one);
+//					wordMap.put(lines[0], list);
+//				}
+//			}
+//			bufferedReader.close();
+//		}
+//
+//		//invoke reduce method for each key
+//		for(String key : wordMap.keySet())
+//		{
+//			Text text = new Text();
+//			text.set(key);
+//
+//			Iterator<IntWritable> itr = wordMap.get(key).iterator();
+//
+//			reduceMethod.invoke(job.reducerInstance,text,itr,reduceContext);
+//		}
 	}
 
 

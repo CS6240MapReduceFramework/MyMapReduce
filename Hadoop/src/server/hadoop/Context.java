@@ -25,7 +25,7 @@ public class Context {
 				fdir.mkdirs();
 
 
-			File f = new File(foldername +"/"+ key.get()+".txt");
+			File f = new File(foldername +"/"+ key.get());
 
 			if (!f.exists())
 				f.createNewFile();
@@ -34,7 +34,8 @@ public class Context {
 
 			fileWriter = new FileWriter(f, true);
 			bufferedWriter = new BufferedWriter(fileWriter);
-			bufferedWriter.write(key.get() + "\t" + value.get() + "\n");
+//			bufferedWriter.write(key.get() + "\t" + value.get() + "\n");
+			bufferedWriter.write(value.get() + "\n");
 			bufferedWriter.flush();
 			bufferedWriter.close();
 		}
