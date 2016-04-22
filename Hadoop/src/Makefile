@@ -1,21 +1,11 @@
 
 all:
-	(cd textsock && make)
+	# (cd textsock && make)
 	(cd client && sbt assembly && mv target/scala-*/client*jar client.jar)
-	(cd server/hadoop && make)
+	# (cd server/hadoop && make)
 	# (cd server && sbt assembly && mv target/scala-*/server*jar server.jar)
 	(cd server/wordcount && sbt assembly && mv target/scala-*/wordcount*jar wordcount.jar)
 	(cd server/wordcount && cp wordcount.jar ../../server.jar)
-server1:
-	(cd textsock && make)
-	(cd server/hadoop && make)
-	(cd server/wordcount && sbt assembly && mv target/scala-*/wordcount*jar wordcount.jar)
-	(cd server/wordcount && cp wordcount.jar ../../server.jar)
-client1:	
-	(cd textsock && make)
-	(cd client && sbt assembly && mv target/scala-*/client*jar client.jar)
-copyjar:
-	(bash copy-server.sh)	
 start1:
 	(bash start-cluster.sh 1)
 start2:
