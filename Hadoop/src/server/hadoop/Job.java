@@ -116,20 +116,21 @@ public class Job {
 	public void reducerTask(String inputBucket,String instanceIp) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, IOException
 	{
 
-
+		//TODO: How to get data types for reduce method dynamically?
 		Class[] cArgs = new Class[3];
-		cArgs[0] = String.class;
-		cArgs[1] = ArrayList.class;
+		cArgs[0] = Text.class;
+		cArgs[1] = Iterator.class;
 		cArgs[2] = Context.class;
 		Method reduceMethod = job.reducerCls.getMethod("reduce",cArgs);
 		Context reduceContext = new Context();
 		reduceContext.foldername = "output";
 
-		HashMap<String,ArrayList<Integer>> wordMap = new HashMap<String,ArrayList<Integer>>();
+		HashMap<String,ArrayList<IntWritable>> wordMap = new HashMap<String,ArrayList<IntWritable>>();
 
 		File tempFiles = new File(instanceIp+"/tempFiles");
 		job.partFiles = tempFiles.listFiles();
 
+		IntWritable one = new IntWritable(1);
 
 		//TODO: This logic of writing into a HashMap should be changed
 		for(int i=0; i<job.partFiles.length;i++)
@@ -137,20 +138,21 @@ public class Job {
 			FileReader fileReader = new FileReader(job.partFiles[i]);
 			BufferedReader bufferedReader = new BufferedReader(fileReader);
 
+			
 			String line = null;
 			while((line = bufferedReader.readLine())!= null)
 			{
 				String[] lines = line.split("\t");
 				if(wordMap.containsKey(lines[0]))
 				{
-					ArrayList<Integer> list = wordMap.get(lines[0]);
-					list.add(1);
+					ArrayList<IntWritable> list = wordMap.get(lines[0]);
+					list.add(one);
 					wordMap.put(lines[0],list);
 				}
 				else
 				{
-					ArrayList<Integer> list = new ArrayList<Integer>();
-					list.add(1);
+					ArrayList<IntWritable> list = new ArrayList<IntWritable>();
+					list.add(one);
 					wordMap.put(lines[0], list);
 				}
 			}
@@ -160,7 +162,12 @@ public class Job {
 		//invoke reduce method for each key
 		for(String key : wordMap.keySet())
 		{
-			reduceMethod.invoke(job.reducerInstance,key,wordMap.get(key),reduceContext);
+			Text text = new Text();
+			text.set(key);
+			
+			Iterator<IntWritable> itr = wordMap.get(key).iterator();
+			
+			reduceMethod.invoke(job.reducerInstance,text,itr,reduceContext);
 		}
 	}
 
@@ -231,9 +238,11 @@ public class Job {
 
 
 		String line = null;
+		
+		//TODO: How to get data types for reduce method dynamically?
 		Class[] cArgs = new Class[3];
 		cArgs[0] = Object.class;
-		cArgs[1] = String.class;
+		cArgs[1] = Text.class;
 		cArgs[2] = Context.class;
 
 		System.out.println("Mapper class instantiated..");
@@ -254,10 +263,12 @@ public class Job {
 			FileReader fileReader = new FileReader(inputFile);
 			BufferedReader bufferedReader = new BufferedReader(fileReader);
 
+			Text text = new Text();
 			System.out.println("calling map method in mapper task");
 			while((line = bufferedReader.readLine())!= null)
 			{		
-				mapMethod.invoke(job.mapperInstance,new Object(),line,mapContext);
+				text.set(line);
+				mapMethod.invoke(job.mapperInstance,new Object(),text,mapContext);
 
 			}
 			bufferedReader.close();

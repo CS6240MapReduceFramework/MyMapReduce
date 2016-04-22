@@ -4,7 +4,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class IntWritable implements WritableComparable<IntWritable> {
+public class IntWritable {
 
 	private int value;
 
@@ -18,41 +18,41 @@ public class IntWritable implements WritableComparable<IntWritable> {
 	/** Return the value of this IntWritable. */
 	public int get() { return value; }
 
-	@Override
-	public void readFields(DataInput in) throws IOException {
-		value = in.readInt();
-	}
+//	@Override
+//	public void readFields(DataInput in) throws IOException {
+//		value = in.readInt();
+//	}
+//
+//	@Override
+//	public void write(DataOutput out) throws IOException {
+//		out.writeInt(value);
+//	}
+//
+//	@Override
+//	public boolean equals(Object o) {
+//		if (!(o instanceof IntWritable))
+//			return false;
+//		IntWritable other = (IntWritable)o;
+//		return this.value == other.value;
+//	}
+//
+//	@Override
+//	public int hashCode() {
+//		return value;
+//	}
 
-	@Override
-	public void write(DataOutput out) throws IOException {
-		out.writeInt(value);
-	}
-
-	@Override
-	public boolean equals(Object o) {
-		if (!(o instanceof IntWritable))
-			return false;
-		IntWritable other = (IntWritable)o;
-		return this.value == other.value;
-	}
-
-	@Override
-	public int hashCode() {
-		return value;
-	}
-
-	/** Compares two IntWritables. */
-	@Override
-	public int compareTo(IntWritable o) {
-		int thisValue = this.value;
-		int thatValue = o.value;
-		return (thisValue<thatValue ? -1 : (thisValue==thatValue ? 0 : 1));
-	}
-
-	@Override
-	public String toString() {
-		return Integer.toString(value);
-	}
+//	/** Compares two IntWritables. */
+//	@Override
+//	public int compareTo(IntWritable o) {
+//		int thisValue = this.value;
+//		int thatValue = o.value;
+//		return (thisValue<thatValue ? -1 : (thisValue==thatValue ? 0 : 1));
+//	}
+//
+//	@Override
+//	public String toString() {
+//		return Integer.toString(value);
+//	}
 
 	/** A Comparator optimized for IntWritable. */ 
 //	public static class Comparator extends WritableComparator {

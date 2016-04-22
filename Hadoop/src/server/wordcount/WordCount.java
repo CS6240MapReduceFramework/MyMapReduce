@@ -7,40 +7,43 @@ import java.io.OutputStream;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
+import java.util.*;
+
 
 public class WordCount {
 
-	//TODO: Add template to Mapper. Example : Mapper<KEYIN, KEYOUT>
-	public static class WordCountMapper extends Mapper<String,String,String,Integer>
+	public static class WordCountMapper extends Mapper<Text,Text,Text,IntWritable>
 	{	
 		//TODO: Use Text and IntWritable 
-		private String word = new String();
-		private Integer count = new Integer(1);
+		private Text word = new Text();
+		private IntWritable one = new IntWritable(1);
 
 		//TODO: Throw error if the given data types doesn't match with the Mapper data types
-		public void map(Object key, String value, Context context) throws IOException
+		public void map(Object key, Text value, Context context) throws IOException
 		{
 
 			//System.out.println("inside map method...");
-			String input = value.replaceAll("[^a-zA-Z0-9]","");
+			String input = value.get().replaceAll("[^a-zA-Z0-9]","");
 
-			StringTokenizer tokens = new StringTokenizer(value, " ");
+			StringTokenizer tokens = new StringTokenizer(value.get(), " ");
 			while(tokens.hasMoreTokens())
 			{
-				word = tokens.nextToken().trim();
-				context.write(word,count);
+				word.set(tokens.nextToken().trim());
+				context.write(word,one);
 			}
 		}
 	}
 
-	public static class WordCountRedcuer extends Reducer<String, ArrayList<Integer>, String, Integer>
+	public static class WordCountRedcuer extends Reducer<Text, Iterator<IntWritable>, Text, IntWritable>
 	{	
 		//TODO: Throw error if the data types doesn't match
-		public void reduce(String key, ArrayList<Integer> values, Context context) throws IOException
+		public void reduce(Text key, Iterator<IntWritable> values, Context context) throws IOException
 		{
-			int sum = 0;
-			for (Integer val : values) {
-				sum += val;
+			IntWritable sum = new IntWritable(0);
+			
+			while(values.hasNext())
+			{
+				sum.set(sum.get() + values.next().get());
 			}
 			context.write(key,sum);
 		}

@@ -14,22 +14,18 @@ public class Context {
 
 	public static String foldername;
 
-	public void write(String key, Integer value) {
+	public void write(Text key, IntWritable value) {
 		String ip ;
 
-		System.out.println("in Context write - key: "+key+" value: "+value);
+		System.out.println("in Context write - key: "+key.get()+" value: "+value.get());
 		try
 		{
-
-			
-
 			File fdir = new File(foldername);
 			if(!fdir.exists())
 				fdir.mkdirs();
 
 
-
-			File f = new File(foldername +"/"+ key+".txt");
+			File f = new File(foldername +"/"+ key.get()+".txt");
 
 			if (!f.exists())
 				f.createNewFile();
@@ -38,7 +34,7 @@ public class Context {
 
 			fileWriter = new FileWriter(f, true);
 			bufferedWriter = new BufferedWriter(fileWriter);
-			bufferedWriter.write(key + "\t" + value + "\n");
+			bufferedWriter.write(key.get() + "\t" + value.get() + "\n");
 			bufferedWriter.flush();
 			bufferedWriter.close();
 		}

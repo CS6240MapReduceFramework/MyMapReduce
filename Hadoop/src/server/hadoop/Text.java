@@ -2,10 +2,15 @@ package hadoop;
 
 public class Text {
 
-	public String toString()
+	String str;
+	
+	public void set(String str)
 	{
-		String str = "";
-		
-		return str;
+		this.str = str;
+	}
+	
+	public String get()
+	{
+		return this.str;
 	}
 }
