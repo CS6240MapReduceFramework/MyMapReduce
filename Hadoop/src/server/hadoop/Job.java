@@ -319,7 +319,7 @@ public class Job {
 				reducerTask(inputBucket, instanceIp);
 			}            
 
-			uploadToS3(outputBucket, "output", "reducelocal/output");
+			uploadToS3(outputBucket, "output", "output");
 			conn.putln("REDUCER_COMPLETE");
 
 			System.out.println("Closing socket...");

@@ -356,7 +356,6 @@ public class WebClient {
         startMappersPhase(connections);
         waitForMappersPhaseCompletion(connections);
 
-        //TODO: Downloading files completed. TODO merge the common files
         downloadIntermediateFilesFromS3(ips);
 
         //Merging files to allTempFiles folder
@@ -365,8 +364,6 @@ public class WebClient {
         //Upload to output directory in the input_bucket
         uploadFilesToS3("allTempFiles/merged", outputBucket, "output");
         divideFilesInS3(instances_num, ips,"output");
-
-        //TODO: divide merged files equally for all instances and push to S3 accordingly
 
         startReducersPhase(connections);
         closeConnections(connections);
