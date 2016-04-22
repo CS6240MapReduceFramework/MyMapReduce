@@ -1,5 +1,4 @@
-sleep 30
-filename="instances.txt"
+filename="client/instances.txt"
 while read -r line
 do
 	array=(${line//;/ })
@@ -7,3 +6,5 @@ do
 	echo "Stopping - $insId"
 	aws ec2 stop-instances --instance-ids $insId
 done < "$filename"
+
+rm -rf $filename

@@ -1,5 +1,5 @@
-secGroup="launch-wizard-1"
-keyPair="kaushikfinaaws"
+secGroup="devenv-sg"
+keyPair="firstKeyPair"
 noOfInst=$1
 declare -a instancesArray
 
@@ -14,14 +14,13 @@ do
 	i=$((i+1))
 done
 
-
+echo "sleep 100"
 sleep 100
 i=0
 
 while [ $i -lt $noOfInst ];
 do
 	insId=${instancesArray[i]}
-	echo $insId
 	insId="${insId%\"}"
 	insId="${insId#\"}"
 
@@ -29,14 +28,13 @@ do
 
 	insIp="${insIp%\"}"
 	insIp="${insIp#\"}"
-
 	echo $insId";"$insIp>>instances.txt
-	echo "scp -i $keyPair.pem instances.txt ec2-user@$insIp:~"
-	scp -i $keyPair.pem server.jar ec2-user@$insIp:~
+	
+	scp -i $keyPair.pem -o StrictHostKeyChecking=no server.jar ec2-user@$insIp:~
 	scp -i $keyPair.pem config.properties ec2-user@$insIp:~
 	scp -i $keyPair.pem $keyPair.pem ec2-user@$insIp:~
-	echo "********executing jar"
 
+	echo "executing jar"
 	ssh -i $keyPair.pem ec2-user@$insIp "java -jar server.jar > log.txt" &
 
 	i=$((i+1))

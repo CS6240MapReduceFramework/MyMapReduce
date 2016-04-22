@@ -1,11 +1,12 @@
-.classpath
-.project
 *.class
 *.iml
-Hadoop/.idea
-Hadoop/bin
 *.properties
 *.jar
 *.pem
 *.csv
+.classpath
+.project
+Hadoop/.idea
+Hadoop/.settings
+Hadoop/bin
 Hadoop/src/client/allTempFiles/
