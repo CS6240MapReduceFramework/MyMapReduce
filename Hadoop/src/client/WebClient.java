@@ -119,7 +119,6 @@ public class WebClient {
     public static void divideRegularFile(String key) throws IOException {
 
         S3Object object = s3Client.getObject(new GetObjectRequest(inputBucket, key));
-
         BufferedInputStream bis = new BufferedInputStream(object.getObjectContent());
         String fileName = key.substring(key.lastIndexOf("/") + 1);
         writeToFiles(bis, fileName);
@@ -154,8 +153,7 @@ public class WebClient {
 
         s3Client.deleteObject(new DeleteObjectRequest(inputBucket, key));
     }
-
-
+    
     public static void divideFilesInS3(int instancesCount, String[] ips, String bucketfolder, Boolean move) {
         ArrayList<String> files = getFilesList(bucketfolder);
 
@@ -198,7 +196,6 @@ public class WebClient {
                 System.out.println("error message in threadl.sleep");
             }
         }
-
     }
 
     public static void startMappersPhase(TextSocket[] connections) throws IOException {
@@ -370,17 +367,15 @@ public class WebClient {
      */
     public static void main(String[] args) throws IOException {
 
-        if (args.length != 4) {
+        if (args.length != 2) {
             System.out.println("Not enough arguments passed");
-            System.out.println("Usage: WebClient s3://<inputBucket>/input s3://<outputBucket>/output <InstancesFile> <ApplicationClassName>");
+            System.out.println("Usage: WebClient s3://<inputBucket>/input s3://<outputBucket>/output");
             System.exit(1);
         }
 
         String inputDataLocation = args[0];
         String outputDataLocation = args[1];
-        String instancesFile = args[2];
-        String programName = args[3];
-
+        
         String[] inputDataLocationSplits = inputDataLocation.split("//")[1].split("/");
         inputBucket = inputDataLocationSplits[0];
         String inputFolderInBucket = inputDataLocationSplits[1];
@@ -392,7 +387,7 @@ public class WebClient {
 
         //Read the instances.txt file
         System.out.println("Reading instances.txt file");
-        Scanner sc = new Scanner(new File(instancesFile));
+        Scanner sc = new Scanner(new File("instances.txt"));
         int instances_num = Integer.parseInt(sc.nextLine());
         System.out.println("Instances count: " + instances_num);
 

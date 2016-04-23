@@ -1,5 +1,7 @@
-secGroup="devenv-sg"
+#!/bin/bash
 keyPair="firstKeyPair"
+secGroup="devenv-sg"
+
 noOfInst=$1
 declare -a instancesArray
 
@@ -12,6 +14,7 @@ while [ $i -lt $noOfInst ];
 do
 	instancesArray[$i]=$(aws ec2 run-instances --image-id ami-08111162 --security-group-ids $secGroup --count 1 --instance-type t2.micro --key-name $keyPair --query 'Instances[0].InstanceId')
 	i=$((i+1))
+	echo "instance "$i" created"
 done
 
 echo "sleep 100"
@@ -25,18 +28,12 @@ do
 	insId="${insId#\"}"
 
 	insIp=$(aws ec2 describe-instances --instance-ids $insId --query 'Reservations[0].Instances[0].PublicIpAddress')
-
 	insIp="${insIp%\"}"
 	insIp="${insIp#\"}"
+
 	echo $insId";"$insIp>>instances.txt
+	echo $insId";"$insIp
 	
-	scp -i $keyPair.pem -o StrictHostKeyChecking=no server.jar ec2-user@$insIp:~
-	scp -i $keyPair.pem config.properties ec2-user@$insIp:~
-	scp -i $keyPair.pem $keyPair.pem ec2-user@$insIp:~
-
-	echo "executing jar"
-	ssh -i $keyPair.pem ec2-user@$insIp "java -jar server.jar > log.txt" &
-
 	i=$((i+1))
 	echo "---------------------------"
 done

@@ -1,21 +1,13 @@
+run:
+	bash start-cluster.sh 2
+	bash my-mapreduce.sh wordcount s3://neel-third/input s3://neel-third/output
+	bash stop-cluster
 
 all:
 	(cd textsock && make)
 	(cd client && sbt assembly && mv target/scala-*/client*jar client.jar)
 	(cd server/hadoop && make)
-	(cd server && sbt assembly && mv target/scala-*/server*jar server.jar)
-	(cd server/wordcount && sbt assembly && mv target/scala-*/wordcount*jar wordcount.jar)
-	(cd server/wordcount && cp wordcount.jar ../../server.jar)
-1start:
-	(bash start-cluster.sh 1)
-2start:
-	(bash start-cluster.sh 2)
-8start:
-	(bash start-cluster.sh 8)
-my-mapreduce:
-	(cd client && java -jar client.jar s3://ccshabiba/input s3://ccshabiba/output instances.txt WordCount)
-stop:
-	(bash stop-cluster.sh)
+
 clean:
 	(rm -rf server.jar)
 	(cd textsock && make clean)
@@ -25,6 +17,7 @@ clean:
 	(cd server/wordcount && rm -rf target project/target project/project wordcount.jar)
 	(cd client/ && rm -rf allTempFiles)
 	(cd client/ && rm -rf FinalOutput)
+
 .PHONY: all clean
 	#Test
 
