@@ -117,7 +117,7 @@ public class Job {
     }
 
     public void setOutputValueClass(Class outValue) {
-        outputKeyClass = outValue;
+        outputValueClass = outValue;
     }
 
     //TODO: Identify the purpose of this method
@@ -136,14 +136,15 @@ public class Job {
 
         //TODO: How to get data types for reduce method dynamically?
         Class[] cArgs = new Class[3];
-        cArgs[0] = Text.class; //outputKeyClass;//Text.class;
+        cArgs[0] = outputKeyClass;
         cArgs[1] = CustomIterable.class;
         cArgs[2] = Context.class;
         Method reduceMethod = job.reducerCls.getMethod("reduce", cArgs);
 //      //Context<Text, IntWritable> reduceContext = new ReducerContext();
-        Context reduceContext = new ReducerContext();
+        Context reduceContext = new Context();
         reduceContext.foldername = "output";
         reduceContext.instance = instanceIp;
+        reduceContext.phase = "REDUCER";
 
 //		HashMap<String,ArrayList<IntWritable>> wordMap = new HashMap<String,ArrayList<IntWritable>>();
 
@@ -268,10 +269,10 @@ public class Job {
         Method mapMethod = job.mapperCls.getMethod("map", cArgs);
 
 //        Context<Text,IntWritable> mapContext = new MapperContext();
-        Context mapContext = new MapperContext();
+        Context mapContext = new Context();
         mapContext.instance = instanceIp;
         mapContext.foldername = instanceIp + "/tempFiles";
-
+        mapContext.phase = "MAPPER";
 
         File inputDir = new File("inputlocal/" + instanceIp + "/input");
 
