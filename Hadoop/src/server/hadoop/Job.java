@@ -53,7 +53,7 @@ public class Job {
     public double mapperPercentageComplete = 0.00d;
     public Configuration conf;
     public File[] partFiles;
-    public static boolean reducerComplete = false; 
+    public static boolean reducerComplete = false;
     private static int MapRecordCount = 0;
 
     static Properties prop = new Properties();
@@ -86,9 +86,9 @@ public class Job {
 
         return job;
     }
-    
+
     public static int getMapRecordCount() {
-    	return MapRecordCount;
+        return MapRecordCount;
     }
 
     public void setMapperClass(Class<? extends Mapper> mapperClass) throws ClassNotFoundException, InstantiationException, IllegalAccessException {
@@ -130,7 +130,7 @@ public class Job {
     }
 
 
-    public void reducerTask(String outputBucket, String instanceIp) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, IOException, Exception {
+    public boolean reducerTask(String outputBucket, String instanceIp) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, IOException, Exception {
 
         getFileFromS3(outputBucket, instanceIp + "/output", "reducelocal");
 
@@ -148,6 +148,10 @@ public class Job {
 //		HashMap<String,ArrayList<IntWritable>> wordMap = new HashMap<String,ArrayList<IntWritable>>();
 
         File tempFiles = new File("reducelocal/" + instanceIp + "/output");
+
+        if (!tempFiles.exists()) {
+            return false;
+        }
         job.partFiles = tempFiles.listFiles();
 
         IntWritable one = new IntWritable(1);
@@ -198,6 +202,7 @@ public class Job {
 //
 //			reduceMethod.invoke(job.reducerInstance,text,itr,reduceContext);
 //		}
+        return true;
     }
 
 
@@ -205,8 +210,8 @@ public class Job {
     public static void uploadToS3(String bucketName, String toS3Folder, String fromLocalFolder) {
         try {
             File from = new File(fromLocalFolder);
-            if(reducerComplete){
-            	MapRecordCount++;
+            if (reducerComplete) {
+                MapRecordCount++;
             }
             System.out.println("Uploading files to S3 from a EC2 instance\n");
 
@@ -247,7 +252,7 @@ public class Job {
         }
     }
 
-    public void mapperTask(String inputBucket, String instanceIp) throws NoSuchMethodException, SecurityException, IOException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, InterruptedException, Exception {
+    public boolean mapperTask(String inputBucket, String instanceIp) throws NoSuchMethodException, SecurityException, IOException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, InterruptedException, Exception {
 
         getFileFromS3(inputBucket, instanceIp, "inputlocal");
 
@@ -270,6 +275,8 @@ public class Job {
 
         File inputDir = new File("inputlocal/" + instanceIp + "/input");
 
+        if (!inputDir.exists())
+            return false;
         System.out.println("input file path: " + inputDir.getAbsolutePath());
 
 
@@ -287,6 +294,8 @@ public class Job {
             }
             bufferedReader.close();
         }
+        return true;
+
     }
 
     public void waitForCompletion(Boolean bool) throws NoSuchMethodException, SecurityException, IOException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, Exception {
@@ -311,27 +320,33 @@ public class Job {
 
             String command = conn.getln();
 
-            if (command.equals("MAPPER_START"))
-                mapperTask(inputBucket, instanceIp);
-            else
+            if (command.equals("MAPPER_START")) {
+                boolean mapstatus = mapperTask(inputBucket, instanceIp);
+                if (!mapstatus) {
+                    System.out.println("No Input files for Mapper");
+                    conn.putln("EXIT");
+                } else {
+                    System.out.println("Copying key files from Mapper to S3");
+                    //copy temp files after Mapper to S3
+                    uploadToS3(inputBucket, instanceIp + "/tempFiles", instanceIp + "/tempFiles");
+
+                    System.out.println("key files from Mapper uploaded to S3");
+
+                    conn.putln("MAPPER_COMPLETE");
+                }
+            } else
                 System.out.println("Expected Command: MAPPER_START. Received command: " + command);
 
-
-            System.out.println("Copying key files from Mapper to S3");
-            //copy temp files after Mapper to S3
-            uploadToS3(inputBucket, instanceIp + "/tempFiles", instanceIp + "/tempFiles");
-
-            System.out.println("key files from Mapper uploaded to S3");
-
-            conn.putln("MAPPER_COMPLETE");
-
             if (conn.getln().equals("REDUCER_START")) {
-                reducerTask(inputBucket, instanceIp);
+                boolean reducestatus = reducerTask(inputBucket, instanceIp);
+                if (!reducestatus) {
+                    conn.putln("EXIT");
+                } else {
+                    this.reducerComplete = true;
+                    uploadToS3(outputBucket, "output", "output");
+                    conn.putln("REDUCER_COMPLETE");
+                }
             }
-            
-            this.reducerComplete = true;
-            uploadToS3(outputBucket, "output", "output");
-            conn.putln("REDUCER_COMPLETE");
 
             System.out.println("Closing socket...");
             conn.close();

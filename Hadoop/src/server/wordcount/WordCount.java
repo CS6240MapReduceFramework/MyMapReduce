@@ -22,9 +22,9 @@ public class WordCount {
 		{
 
 			//System.out.println("inside map method...");
-			String input = value.get().replaceAll("[^a-zA-Z0-9]","");
+			String input = value.get().replaceAll("[^a-zA-Z0-9 ]","");
 
-			StringTokenizer tokens = new StringTokenizer(value.get(), " ");
+			StringTokenizer tokens = new StringTokenizer(input, " ");
 			while(tokens.hasMoreTokens())
 			{
 				word.set(tokens.nextToken().trim());

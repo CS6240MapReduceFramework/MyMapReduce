@@ -156,7 +156,7 @@ public class WebClient {
     }
 
 
-    public static void divideFilesInS3(int instancesCount, String[] ips, String bucketfolder) {
+    public static void divideFilesInS3(int instancesCount, String[] ips, String bucketfolder, Boolean move) {
         ArrayList<String> files = getFilesList(bucketfolder);
 
         if (files.size() == 1) {
@@ -182,7 +182,8 @@ public class WebClient {
                 TransferManager tx = new TransferManager(credentials);
                 Copy cp = tx.copy(copyObjRequest);
                 cp.waitForCompletion();
-                s3Client.deleteObject(new DeleteObjectRequest(inputBucket, files.get(i)));
+                if (move)
+                    s3Client.deleteObject(new DeleteObjectRequest(inputBucket, files.get(i)));
                 System.out.println("copied object");
 
                 instance++;
@@ -429,7 +430,7 @@ public class WebClient {
             System.out.println("Program started on" + instanceIp);
         }
 
-        divideFilesInS3(instances_num, ips, "input");
+        divideFilesInS3(instances_num, ips, "input", false);
         startMappersPhase(connections);
         waitForMappersPhaseCompletion(connections);
 
@@ -440,7 +441,7 @@ public class WebClient {
 
         //Upload to output directory in the input_bucket
         uploadFilesToS3("allTempFiles/merged", outputBucket, "output");
-        divideFilesInS3(instances_num, ips, "output");
+        divideFilesInS3(instances_num, ips, "output", true);
 
         startReducersPhase(connections);
         closeConnections(connections);
