@@ -88,7 +88,7 @@ public class Job {
     }
     
     public static int getMapRecordCount() {
-    	return this.MapRecordCount;
+    	return MapRecordCount;
     }
 
     public void setMapperClass(Class<? extends Mapper> mapperClass) throws ClassNotFoundException, InstantiationException, IllegalAccessException {
@@ -136,7 +136,7 @@ public class Job {
 
         //TODO: How to get data types for reduce method dynamically?
         Class[] cArgs = new Class[3];
-        cArgs[0] = outputKeyClass;//Text.class;
+        cArgs[0] = Text.class; //outputKeyClass;//Text.class;
         cArgs[1] = CustomIterable.class;
         cArgs[2] = Context.class;
         Method reduceMethod = job.reducerCls.getMethod("reduce", cArgs);
@@ -206,7 +206,7 @@ public class Job {
         try {
             File from = new File(fromLocalFolder);
             if(reducerComplete){
-            	this.MapRecordCount++;
+            	MapRecordCount++;
             }
             System.out.println("Uploading files to S3 from a EC2 instance\n");
 

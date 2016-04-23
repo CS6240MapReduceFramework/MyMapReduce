@@ -13,7 +13,7 @@ all:
 8start:
 	(bash start-cluster.sh 8)
 my-mapreduce:
-	(cd client && java -jar client.jar s3://neel-third/input s3://neel-third/output instances.txt WordCount)
+	(cd client && java -jar client.jar s3://ccshabiba/input s3://ccshabiba/output instances.txt WordCount)
 stop:
 	(bash stop-cluster.sh)
 clean:
@@ -24,6 +24,7 @@ clean:
 	(cd server/hadoop && rm -rf target project/target project/project)
 	(cd server/wordcount && rm -rf target project/target project/project wordcount.jar)
 	(cd client/ && rm -rf allTempFiles)
+	(cd client/ && rm -rf FinalOutput)
 .PHONY: all clean
 	#Test
 

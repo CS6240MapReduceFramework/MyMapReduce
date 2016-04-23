@@ -36,14 +36,16 @@ public class CustomIterable{
     }
 
     public IntWritable next() throws Exception{
-        if (dataType.getClass().equals(IntWritable.class)) {
+//        if (dataType.getClass().equals(IntWritable.class)) {
             IntWritable value = new IntWritable();
             value.set(Integer.parseInt((String) iterator.next()));
-        } else if (dataType.getClass().equals(Text.class)) {
-            Text value = new Text();
-            value.set((String) iterator.next());
-        }
-        return null;
+            return value;
+//        } else if (dataType.getClass().equals(Text.class)) {
+//            Text value = new Text();
+//            value.set((String) iterator.next());
+//            return value;
+//        }
+//        return null;
 
 //        GenericType<T> returnValue = new GenericType<T>(Integer.parseInt((String)iterator.next()));
 //        GenericType<T> returnValue = new GenericType<T>(iterator.next());

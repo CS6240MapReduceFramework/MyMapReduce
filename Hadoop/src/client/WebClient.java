@@ -27,9 +27,9 @@ import com.amazonaws.services.s3.transfer.MultipleFileUpload;
 public class WebClient {
 
     static Properties prop = new Properties();
-	public static int partCounter = 1;
-	public static int sizeOfFiles = 1024*1024*128;
-	public static byte[] buffer = new byte[sizeOfFiles];
+    public static int partCounter = 1;
+    public static int sizeOfFiles = 1024 * 1024 * 128;
+    public static byte[] buffer = new byte[sizeOfFiles];
 
     static {
         try {
@@ -76,113 +76,115 @@ public class WebClient {
             return files;
         }
     }
-    
-    
-    public static void handleSingleFile(String key){
-		
-		divideSingleFile(key);
-		uploadPartsToS3();
-		clearMainS3File(key);
-	}
-	
-	public static void divideSingleFile(String key){
-		
-		try{
-			String fileExtension = getFileExtension(key);
-			if(fileExtension.equals("gz")) {
-				divideCompressedFile(key);
-			} else {
-				divideRegularFile(key);
-			}
-		} catch (Exception e){
-			e.printStackTrace();
-		}
-	}
-	
-	public static String getFileExtension(String fileName){
-		return fileName.substring(fileName.lastIndexOf(".") + 1);
-	}
-	
-	public static void divideCompressedFile(String key) throws IOException {
-		
-		S3Object object = s3Client.getObject(new GetObjectRequest(inputBucket, key));
-		GZIPInputStream gis = new GZIPInputStream(object.getObjectContent());
-		BufferedInputStream bis = new BufferedInputStream(gis);
-		
-		String fileName = key.substring(key.lastIndexOf("/")+1, key.lastIndexOf("."));
-		writeToFiles(bis, fileName);
-		
-		bis.close();
-		gis.close();
-	}
-	
-	public static void divideRegularFile(String key) throws IOException {
-		
-		S3Object object = s3Client.getObject(new GetObjectRequest(inputBucket, key));
-		
-		BufferedInputStream bis = new BufferedInputStream(object.getObjectContent());
-		String fileName = key.substring(key.lastIndexOf("/")+1);
-		writeToFiles(bis, fileName);
-		bis.close();
-	}
-	
-	public static void writeToFiles(BufferedInputStream bis, String fileName) throws IOException {
-		
-		File dataDir = new File("../data");
-		dataDir.mkdir();
-		int tmp = 0;
-		while ((tmp = bis.read(buffer)) > 0) {
-			File newFile = new File(String.format("%03d", partCounter++) +"-"+ fileName);
-			try (FileOutputStream out = new FileOutputStream("../data/"+newFile)) {
-				out.write(buffer, 0, tmp);
-			}
-		}
-	}
-	
-	public static void uploadPartsToS3(){
-		
-		File uploadDir = new File("../data");
-		File[] listOfFiles = uploadDir.listFiles();
-		for(int i=0; i<listOfFiles.length; i++){
-			s3Client.putObject(new PutObjectRequest(inputBucket, "input/"+listOfFiles[i].getName(), listOfFiles[i]));
-			listOfFiles[i].delete();
-		}
-		uploadDir.delete();
-	}
-	
-	public static void clearMainS3File(String key) {
-		
-		s3Client.deleteObject(new DeleteObjectRequest(inputBucket, key));
-	}
-	
-	
+
+
+    public static void handleSingleFile(String key) {
+
+        divideSingleFile(key);
+        uploadPartsToS3();
+        clearMainS3File(key);
+    }
+
+    public static void divideSingleFile(String key) {
+
+        try {
+            String fileExtension = getFileExtension(key);
+            if (fileExtension.equals("gz")) {
+                divideCompressedFile(key);
+            } else {
+                divideRegularFile(key);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static String getFileExtension(String fileName) {
+        return fileName.substring(fileName.lastIndexOf(".") + 1);
+    }
+
+    public static void divideCompressedFile(String key) throws IOException {
+
+        S3Object object = s3Client.getObject(new GetObjectRequest(inputBucket, key));
+        GZIPInputStream gis = new GZIPInputStream(object.getObjectContent());
+        BufferedInputStream bis = new BufferedInputStream(gis);
+
+        String fileName = key.substring(key.lastIndexOf("/") + 1, key.lastIndexOf("."));
+        writeToFiles(bis, fileName);
+
+        bis.close();
+        gis.close();
+    }
+
+    public static void divideRegularFile(String key) throws IOException {
+
+        S3Object object = s3Client.getObject(new GetObjectRequest(inputBucket, key));
+
+        BufferedInputStream bis = new BufferedInputStream(object.getObjectContent());
+        String fileName = key.substring(key.lastIndexOf("/") + 1);
+        writeToFiles(bis, fileName);
+        bis.close();
+    }
+
+    public static void writeToFiles(BufferedInputStream bis, String fileName) throws IOException {
+
+        File dataDir = new File("../data");
+        dataDir.mkdir();
+        int tmp = 0;
+        while ((tmp = bis.read(buffer)) > 0) {
+            File newFile = new File(String.format("%03d", partCounter++) + "-" + fileName);
+            try (FileOutputStream out = new FileOutputStream("../data/" + newFile)) {
+                out.write(buffer, 0, tmp);
+            }
+        }
+    }
+
+    public static void uploadPartsToS3() {
+
+        File uploadDir = new File("../data");
+        File[] listOfFiles = uploadDir.listFiles();
+        for (int i = 0; i < listOfFiles.length; i++) {
+            s3Client.putObject(new PutObjectRequest(inputBucket, "input/" + listOfFiles[i].getName(), listOfFiles[i]));
+            listOfFiles[i].delete();
+        }
+        uploadDir.delete();
+    }
+
+    public static void clearMainS3File(String key) {
+
+        s3Client.deleteObject(new DeleteObjectRequest(inputBucket, key));
+    }
+
+
     public static void divideFilesInS3(int instancesCount, String[] ips, String bucketfolder) {
         ArrayList<String> files = getFilesList(bucketfolder);
-        
-        if(files.size() == 1){
-			handleSingleFile(files.get(0));
-			files = getFilesList(bucketfolder);
-		}
-		
+
+        if (files.size() == 1) {
+            handleSingleFile(files.get(0));
+            files = getFilesList(bucketfolder);
+        }
+
         int chunk_size = files.size() / instancesCount;
         int remaining_chunk_size = files.size() % instancesCount;
 
-        System.out.println("Number of files - "+files.size());
+        System.out.println("Number of files - " + files.size());
         int instance = 0;
 
         for (int i = 0; i < files.size(); i++) {
             try {
-            	System.out.println("File being copied from S3 to ec2 instance - "+files.get(i));
+                System.out.println("File being copied from S3 to ec2 instance - " + files.get(i));
                 // Copying object
                 CopyObjectRequest copyObjRequest = new CopyObjectRequest(
                         inputBucket, files.get(i), inputBucket, ips[instance] + "/" + files.get(i));
+
 
                 System.out.println("Copying object.");
                 TransferManager tx = new TransferManager(credentials);
                 Copy cp = tx.copy(copyObjRequest);
                 cp.waitForCompletion();
+                s3Client.deleteObject(new DeleteObjectRequest(inputBucket, files.get(i)));
                 System.out.println("copied object");
-                
+
                 instance++;
                 if (instance == instancesCount)
                     instance = 0;
@@ -307,7 +309,7 @@ public class WebClient {
         //Open all instance folders in allTempFiles
         for (File instance : tempfiles.listFiles()) {
 
-            if(instance.getName().contains("DS_Store")){
+            if (instance.getName().contains("DS_Store")) {
                 continue;
             }
 
@@ -319,7 +321,7 @@ public class WebClient {
             //Iterate over all tempfiles in each isntance folder
             for (File tempFile : subFolder.listFiles()) {
 
-                if(instance.getName().contains("DS_Store")){
+                if (instance.getName().contains("DS_Store")) {
                     continue;
                 }
                 //Open tempfile for read
@@ -368,15 +370,9 @@ public class WebClient {
     public static void main(String[] args) throws IOException {
 
         if (args.length != 4) {
-
             System.out.println("Not enough arguments passed");
+            System.out.println("Usage: WebClient s3://<inputBucket>/input s3://<outputBucket>/output <InstancesFile> <ApplicationClassName>");
             System.exit(1);
-        } else {
-            //TODO: displayCorrectUsage();
-        	System.out.println("Usage: WebClient s3://<inputBucket>/input s3://<outputBucket>/output <InstancesFile> <ApplicationClassName>");
-        	
-            //TODO: exit at this point
-        	System.exit(1);
         }
 
         String inputDataLocation = args[0];
@@ -433,7 +429,7 @@ public class WebClient {
             System.out.println("Program started on" + instanceIp);
         }
 
-        divideFilesInS3(instances_num, ips,"input");
+        divideFilesInS3(instances_num, ips, "input");
         startMappersPhase(connections);
         waitForMappersPhaseCompletion(connections);
 
@@ -444,7 +440,7 @@ public class WebClient {
 
         //Upload to output directory in the input_bucket
         uploadFilesToS3("allTempFiles/merged", outputBucket, "output");
-        divideFilesInS3(instances_num, ips,"output");
+        divideFilesInS3(instances_num, ips, "output");
 
         startReducersPhase(connections);
         closeConnections(connections);
