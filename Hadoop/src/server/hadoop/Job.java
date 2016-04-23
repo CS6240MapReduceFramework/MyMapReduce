@@ -53,6 +53,8 @@ public class Job {
     public double mapperPercentageComplete = 0.00d;
     public Configuration conf;
     public File[] partFiles;
+    public static boolean reducerComplete = false; 
+    private static int MapRecordCount = 0;
 
     static Properties prop = new Properties();
 
@@ -83,6 +85,10 @@ public class Job {
         job.conf = conf;
 
         return job;
+    }
+    
+    public static int getMapRecordCount() {
+    	return this.MapRecordCount;
     }
 
     public void setMapperClass(Class<? extends Mapper> mapperClass) throws ClassNotFoundException, InstantiationException, IllegalAccessException {
@@ -115,6 +121,9 @@ public class Job {
     }
 
     //TODO: Identify the purpose of this method
+    /*
+     * Identify the main class in the application and set the jar to the same.
+     */
     public void setJarByClass(Class jarClass) throws ClassNotFoundException {
         ClassLoader classLoader = jarClass.getClassLoader();
         job.jar = classLoader.loadClass(jarClass.getName());
@@ -196,6 +205,9 @@ public class Job {
     public static void uploadToS3(String bucketName, String toS3Folder, String fromLocalFolder) {
         try {
             File from = new File(fromLocalFolder);
+            if(reducerComplete){
+            	this.MapRecordCount++;
+            }
             System.out.println("Uploading files to S3 from a EC2 instance\n");
 
             TransferManager tx = new TransferManager(credentials);
@@ -316,7 +328,8 @@ public class Job {
             if (conn.getln().equals("REDUCER_START")) {
                 reducerTask(inputBucket, instanceIp);
             }
-
+            
+            this.reducerComplete = true;
             uploadToS3(outputBucket, "output", "output");
             conn.putln("REDUCER_COMPLETE");
 

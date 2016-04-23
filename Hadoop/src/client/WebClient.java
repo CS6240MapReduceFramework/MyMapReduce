@@ -373,7 +373,10 @@ public class WebClient {
             System.exit(1);
         } else {
             //TODO: displayCorrectUsage();
+        	System.out.println("Usage: WebClient s3://<inputBucket>/input s3://<outputBucket>/output <InstancesFile> <ApplicationClassName>");
+        	
             //TODO: exit at this point
+        	System.exit(1);
         }
 
         String inputDataLocation = args[0];
