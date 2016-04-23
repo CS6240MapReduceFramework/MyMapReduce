@@ -402,9 +402,9 @@ public class WebClient {
             String instance_id = line[0];
             instanceIp = line[1];
             ips[count] = instanceIp;
-
+	    int port = Integer.parseInt(line[2]);
             System.out.println("Establishing connection to: " + instanceIp);
-            TextSocket conn = new TextSocket(instanceIp, 3002);
+            TextSocket conn = new TextSocket(instanceIp, port);
 
             System.out.println("Connection established..");
             connections[count] = conn;
