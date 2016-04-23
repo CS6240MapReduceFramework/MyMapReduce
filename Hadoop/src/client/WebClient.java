@@ -28,7 +28,7 @@ public class WebClient {
 
     static Properties prop = new Properties();
     public static int partCounter = 1;
-    public static int sizeOfFiles = 1024 * 1024 * 128;
+    public static int sizeOfFiles = 1024 * 50; //1024 * 128;
     public static byte[] buffer = new byte[sizeOfFiles];
 
     static {
@@ -44,6 +44,8 @@ public class WebClient {
     static private AWSCredentials credentials = new BasicAWSCredentials(prop.getProperty("AWSAccessKeyId"), prop.getProperty("AWSSecretKey"));
     static private AmazonS3 s3Client = new AmazonS3Client(credentials);
     static String inputBucket;
+    static private TransferManager tx = new TransferManager(credentials);
+
 
     /*
      * Fetches the list of file names in s3://<inputBucket>/input folder
@@ -169,22 +171,21 @@ public class WebClient {
 
         System.out.println("Number of files - " + files.size());
         int instance = 0;
+        System.out.println("Copying files...");
 
         for (int i = 0; i < files.size(); i++) {
             try {
-                System.out.println("File being copied from S3 to ec2 instance - " + files.get(i));
+//                System.out.println("File being copied from S3 to ec2 instance - " + files.get(i));
                 // Copying object
                 CopyObjectRequest copyObjRequest = new CopyObjectRequest(
                         inputBucket, files.get(i), inputBucket, ips[instance] + "/" + files.get(i));
 
-
-                System.out.println("Copying object.");
-                TransferManager tx = new TransferManager(credentials);
+//                System.out.println("Copying object.");
                 Copy cp = tx.copy(copyObjRequest);
                 cp.waitForCompletion();
                 if (move)
                     s3Client.deleteObject(new DeleteObjectRequest(inputBucket, files.get(i)));
-                System.out.println("copied object");
+//                System.out.println("copied object");
 
                 instance++;
                 if (instance == instancesCount)
@@ -236,7 +237,6 @@ public class WebClient {
                 localFolder.mkdirs();
 
             for (int i = 0; i < ips.length; i++) {
-                TransferManager tx = new TransferManager(credentials);
                 MultipleFileDownload md = tx.downloadDirectory(outputBucket, "output", localFolder);
                 md.waitForCompletion();
             }
@@ -262,7 +262,6 @@ public class WebClient {
                 localFolder.mkdirs();
 
             for (int i = 0; i < ips.length; i++) {
-                TransferManager tx = new TransferManager(credentials);
                 MultipleFileDownload md = tx.downloadDirectory(inputBucket, ips[i] + "/tempFiles", localFolder);
                 md.waitForCompletion();
             }
@@ -285,7 +284,6 @@ public class WebClient {
             File local = new File(localfolder);
             System.out.println("Uploading files to S3 from a local folder\n");
 
-            TransferManager tx = new TransferManager(credentials);
             MultipleFileUpload mu = tx.uploadDirectory(bucketName, bucketFolder, local, true);
             mu.waitForCompletion();
             s3Client.deleteObject(new DeleteObjectRequest(bucketName, "output/.DS_Store"));

@@ -28,11 +28,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.Inet4Address;
 import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Properties;
-import java.util.StringTokenizer;
+import java.util.*;
 
 public class Job {
 
@@ -302,7 +298,18 @@ public class Job {
     public void waitForCompletion(Boolean bool) throws NoSuchMethodException, SecurityException, IOException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, Exception {
 
         System.out.println("start - waitForCompletion");
+
+
+        //Read the instances.txt file for port number
+        System.out.println("Reading instances.txt file for port number");
+        Scanner sc = new Scanner(new File("instances.txt"));
+        int instances_num = Integer.parseInt(sc.nextLine());
         int port = 3002;
+        while (sc.hasNextLine()) {
+            String[] line = sc.nextLine().split(";");
+            port = Integer.parseInt(line[3]);
+        }
+
         String ip = InetAddress.getLocalHost().getHostAddress();
 
         System.out.println("IPAddress of this ec2 instance: " + ip);
