@@ -13,4 +13,10 @@ public class Text extends DataType{
 	{
 		return this.str;
 	}
+	
+	@Override
+	public String toString()
+	{
+		return this.str;
+	}
 }

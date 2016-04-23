@@ -20,6 +20,9 @@ public class IntWritable extends DataType{
 
 	/** Return the value of this IntWritable. */
 	public int get() { return value; }
+	
+	
+	
 
 //	@Override
 //	public void readFields(DataInput in) throws IOException {
@@ -52,10 +55,10 @@ public class IntWritable extends DataType{
 //		return (thisValue<thatValue ? -1 : (thisValue==thatValue ? 0 : 1));
 //	}
 //
-//	@Override
-//	public String toString() {
-//		return Integer.toString(value);
-//	}
+	@Override
+	public String toString() {
+		return ""+value;
+	}
 
 	/** A Comparator optimized for IntWritable. */ 
 //	public static class Comparator extends WritableComparator {

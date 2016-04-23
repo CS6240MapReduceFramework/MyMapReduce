@@ -307,12 +307,13 @@ public class Job {
         int port = 3002;
         while (sc.hasNextLine()) {
             String[] line = sc.nextLine().split(";");
-            port = Integer.parseInt(line[3]);
+            port = Integer.parseInt(line[2]);
         }
 
         String ip = InetAddress.getLocalHost().getHostAddress();
 
         System.out.println("IPAddress of this ec2 instance: " + ip);
+        System.out.println("Port : "+port);
         TextSocket.Server svr = new TextSocket.Server(port);
 
         TextSocket conn;
