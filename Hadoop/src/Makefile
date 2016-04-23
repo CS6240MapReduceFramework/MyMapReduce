@@ -1,5 +1,5 @@
 run:
-	bash start-cluster.sh 2
+	bash start-cluster.sh 2 distributed
 	bash my-mapreduce.sh wordcount s3://neel-third/input s3://neel-third/output
 	bash stop-cluster
 
@@ -11,7 +11,7 @@ all:
 clean:
 	(rm -rf server.jar)
 	(cd textsock && make clean)
-	(cd client && rm -rf client.jar server.jar output target project/target project/project)
+	(cd client && rm -rf client.jar instances.txt server.jar output target project/target project/project)
 	(cd server && rm -rf server.jar instances.txt target project/target project/project)
 	(cd server/hadoop && rm -rf target project/target project/project)
 	(cd server/wordcount && rm -rf target project/target project/project wordcount.jar)

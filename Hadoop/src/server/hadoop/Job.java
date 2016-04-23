@@ -28,11 +28,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.Inet4Address;
 import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Properties;
-import java.util.StringTokenizer;
+import java.util.*;
 
 public class Job {
 
@@ -117,7 +113,7 @@ public class Job {
     }
 
     public void setOutputValueClass(Class outValue) {
-        outputKeyClass = outValue;
+        outputValueClass = outValue;
     }
 
     //TODO: Identify the purpose of this method
@@ -136,14 +132,15 @@ public class Job {
 
         //TODO: How to get data types for reduce method dynamically?
         Class[] cArgs = new Class[3];
-        cArgs[0] = Text.class; //outputKeyClass;//Text.class;
+        cArgs[0] = outputKeyClass;
         cArgs[1] = CustomIterable.class;
         cArgs[2] = Context.class;
         Method reduceMethod = job.reducerCls.getMethod("reduce", cArgs);
 //      //Context<Text, IntWritable> reduceContext = new ReducerContext();
-        Context reduceContext = new ReducerContext();
+        Context reduceContext = new Context();
         reduceContext.foldername = "output";
         reduceContext.instance = instanceIp;
+        reduceContext.phase = "REDUCER";
 
 //		HashMap<String,ArrayList<IntWritable>> wordMap = new HashMap<String,ArrayList<IntWritable>>();
 
@@ -268,10 +265,10 @@ public class Job {
         Method mapMethod = job.mapperCls.getMethod("map", cArgs);
 
 //        Context<Text,IntWritable> mapContext = new MapperContext();
-        Context mapContext = new MapperContext();
+        Context mapContext = new Context();
         mapContext.instance = instanceIp;
         mapContext.foldername = instanceIp + "/tempFiles";
-
+        mapContext.phase = "MAPPER";
 
         File inputDir = new File("inputlocal/" + instanceIp + "/input");
 
@@ -301,7 +298,18 @@ public class Job {
     public void waitForCompletion(Boolean bool) throws NoSuchMethodException, SecurityException, IOException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, Exception {
 
         System.out.println("start - waitForCompletion");
+
+
+        //Read the instances.txt file for port number
+        System.out.println("Reading instances.txt file for port number");
+        Scanner sc = new Scanner(new File("instances.txt"));
+        int instances_num = Integer.parseInt(sc.nextLine());
         int port = 3002;
+        while (sc.hasNextLine()) {
+            String[] line = sc.nextLine().split(";");
+            port = Integer.parseInt(line[3]);
+        }
+
         String ip = InetAddress.getLocalHost().getHostAddress();
 
         System.out.println("IPAddress of this ec2 instance: " + ip);

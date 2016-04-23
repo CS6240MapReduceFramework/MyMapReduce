@@ -64,7 +64,7 @@ public class WordCount {
 			job.setReducerClass(WordCountRedcuer.class);
 			//TODO: Implement setOutput
 			job.setOutputKeyClass(Text.class);
-			job.setOutputValueClass(IntWritable.class);
+			job.setOutputValueClass(CustomIterable.class);
 			job.setNumReduceTasks(1);
 			// FileInputFormat.addInputPath(job, args[0]);
 			// FileOutputFormat.setOutputPath(job,args[1]);
