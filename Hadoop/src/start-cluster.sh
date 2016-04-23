@@ -45,13 +45,18 @@ else
     echo "Running in Pseudo Mode";
     port=3000
     i=0
-    NET_IP=`ifconfig ${NET_IF} | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'`
+  
     while [ $i -lt $noOfInst ];
     do
-        echo "psuedo;"$NET_IP";"$port>>instances.txt
+
+        pid=$(lsof -i:$port -t); kill -TERM $pid || kill -KILL $pid
+
+        echo "psuedo;127.0.1.1;"$port>>instances.txt
 
         echo "executing jar"
-       	ssh $NET_IP "java -jar server.jar > log.txt" &
+        
+
+        java -jar server.jar > server_log.txt &
 
         port=$((port+1))
         i=$((i+1))
