@@ -172,11 +172,7 @@ public class WebClient {
 
         for (int i = 0; i < files.size(); i++) {
             try {
-
-                if (instance != instancesCount)
-                    instance = i / chunk_size;
-
-                System.out.println("File being copied from S3 to ec2 instance - "+files.get(i));
+            	System.out.println("File being copied from S3 to ec2 instance - "+files.get(i));
                 // Copying object
                 CopyObjectRequest copyObjRequest = new CopyObjectRequest(
                         inputBucket, files.get(i), inputBucket, ips[instance] + "/" + files.get(i));
@@ -186,13 +182,14 @@ public class WebClient {
                 Copy cp = tx.copy(copyObjRequest);
                 cp.waitForCompletion();
                 System.out.println("copied object");
+                
+                instance++;
+                if (instance == instancesCount)
+                    instance = 0;
 
             } catch (AmazonServiceException ase) {
-
                 System.out.println("Error Message:    " + ase.getMessage());
-
             } catch (AmazonClientException ace) {
-
                 System.out.println("Error Message: " + ace.getMessage());
             } catch (InterruptedException ioe) {
                 System.out.println("error message in threadl.sleep");
@@ -218,7 +215,7 @@ public class WebClient {
     }
 
     public static void closeConnections(TextSocket[] connections) throws IOException {
-        System.out.println("REDUER_COMPLETE signal receieved. Closing all connections");
+        System.out.println("REDUCER_COMPLETE signal receieved. Closing all connections");
         for (TextSocket connection : connections) {
             connection.getln();
             connection.close();
@@ -257,7 +254,6 @@ public class WebClient {
 
     public static void downloadIntermediateFilesFromS3(String[] ips) {
         try {
-
             File localFolder = new File("allTempFiles");
             if (!localFolder.exists())
                 localFolder.mkdirs();
@@ -267,10 +263,7 @@ public class WebClient {
                 MultipleFileDownload md = tx.downloadDirectory(inputBucket, ips[i] + "/tempFiles", localFolder);
                 md.waitForCompletion();
             }
-
             System.out.println("All temp files from all instances downloaded");
-
-
         } catch (AmazonServiceException ase) {
             System.out.println("AmazonServiceException");
             ase.printStackTrace();
