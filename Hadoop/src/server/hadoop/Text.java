@@ -1,6 +1,6 @@
 package hadoop;
 
-public class Text {
+public class Text extends DataType{
 
 	String str;
 	

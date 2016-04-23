@@ -4,7 +4,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class IntWritable {
+public class IntWritable extends DataType{
 
 	private int value;
 

@@ -36,115 +36,123 @@ import java.util.StringTokenizer;
 
 public class Job {
 
-	private String jobname;
-	public Object mapperInstance;
-	public Class<?> mapperCls;
-	public Class<?> partitionerCls;
-	public Object partitionerInstance;
-	public Class<?> reducerCls;
-	public Object reducerInstance;
-	private Class jar;
-	private static Job job;
-	public int NUM_REDUCE_TASKS = 1;
-	public int MAPPER_TASKS = 0;
-	public int REDUCER_TASKS = 0;
-	public double mapperPercentageComplete = 0.00d;
-	public Configuration conf;
-	public File[] partFiles;
+    private String jobname;
+    public Object mapperInstance;
+    public Class<?> mapperCls;
+    public Class<?> partitionerCls;
+    public Object partitionerInstance;
+    public Class<?> reducerCls;
+    public Class<?> outputKeyClass;
+    public Class<?> outputValueClass;
+    public Object reducerInstance;
+    private Class jar;
+    private static Job job;
+    public int NUM_REDUCE_TASKS = 1;
+    public int MAPPER_TASKS = 0;
+    public int REDUCER_TASKS = 0;
+    public double mapperPercentageComplete = 0.00d;
+    public Configuration conf;
+    public File[] partFiles;
 
-	static Properties prop = new Properties();
-	static {
-		try {
-			//Properties file should be within src folder
-			prop.load(new FileInputStream("config.properties"));
-		}catch(Exception e){
-			System.out.println(e.getMessage());
-		}
-	}
-	static private AWSCredentials credentials = new BasicAWSCredentials(prop.getProperty("AWSAccessKeyId"), prop.getProperty("AWSSecretKey"));
-	static private AmazonS3 s3Client = new AmazonS3Client(credentials);
+    static Properties prop = new Properties();
 
+    static {
+        try {
+            //Properties file should be within src folder
+            prop.load(new FileInputStream("config.properties"));
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+    }
 
-	public String getJobname() {
-		return jobname;
-	}
-
-	public void setJobname(String jobname) {
-		this.jobname = jobname;
-	}
-
-	public static Job getInstance(Configuration conf,String jobname)
-	{
-		job = new Job();
-		job.jobname = jobname;
-		job.conf = conf;
-
-		return job;
-	}
-
-	public void setMapperClass(Class<? extends Mapper> mapperClass) throws ClassNotFoundException, InstantiationException, IllegalAccessException
-	{
-		mapperCls = Class.forName(mapperClass.getName());
-		mapperInstance = mapperCls.newInstance();
-	}
-
-	public void setPartitionerClass(Class<? extends Partitioner> partitionerClass) throws ClassNotFoundException, InstantiationException, IllegalAccessException
-	{
-		partitionerCls = Class.forName(partitionerClass.getName());
-		partitionerInstance = partitionerCls.newInstance();
-	}
+    static private AWSCredentials credentials = new BasicAWSCredentials(prop.getProperty("AWSAccessKeyId"), prop.getProperty("AWSSecretKey"));
+    static private AmazonS3 s3Client = new AmazonS3Client(credentials);
 
 
-	public void setNumReduceTasks(int reduceTasks)
-	{
-		job.NUM_REDUCE_TASKS = reduceTasks;
-	}
-	public void setReducerClass(Class<? extends Reducer> reducerClass) throws ClassNotFoundException, InstantiationException, IllegalAccessException
-	{
-		reducerCls = Class.forName(reducerClass.getName());
-		reducerInstance = reducerCls.newInstance();
+    public String getJobname() {
+        return jobname;
+    }
 
-	}
+    public void setJobname(String jobname) {
+        this.jobname = jobname;
+    }
 
-	//TODO: Identify the purpose of this method
-	public void setJarByClass(Class jarClass) throws ClassNotFoundException
-	{
-		ClassLoader classLoader = jarClass.getClassLoader();
-		job.jar = classLoader.loadClass(jarClass.getName());
-	}
+    public static Job getInstance(Configuration conf, String jobname) {
+        job = new Job();
+        job.jobname = jobname;
+        job.conf = conf;
+
+        return job;
+    }
+
+    public void setMapperClass(Class<? extends Mapper> mapperClass) throws ClassNotFoundException, InstantiationException, IllegalAccessException {
+        mapperCls = Class.forName(mapperClass.getName());
+        mapperInstance = mapperCls.newInstance();
+    }
+
+    public void setPartitionerClass(Class<? extends Partitioner> partitionerClass) throws ClassNotFoundException, InstantiationException, IllegalAccessException {
+        partitionerCls = Class.forName(partitionerClass.getName());
+        partitionerInstance = partitionerCls.newInstance();
+    }
 
 
-	public void reducerTask(String outputBucket, String instanceIp) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, IOException
-	{
+    public void setNumReduceTasks(int reduceTasks) {
+        job.NUM_REDUCE_TASKS = reduceTasks;
+    }
 
-		getFileFromS3(outputBucket,instanceIp+"/output","reducelocal");
+    public void setReducerClass(Class<? extends Reducer> reducerClass) throws ClassNotFoundException, InstantiationException, IllegalAccessException {
+        reducerCls = Class.forName(reducerClass.getName());
+        reducerInstance = reducerCls.newInstance();
 
-		//TODO: How to get data types for reduce method dynamically?
-		Class[] cArgs = new Class[3];
-		cArgs[0] = Text.class;
-		cArgs[1] = CustomIterable.class;
-		cArgs[2] = Context.class;
-		Method reduceMethod = job.reducerCls.getMethod("reduce",cArgs);
-		Context reduceContext = new Context();
-		reduceContext.foldername = "output";
+    }
+
+    public void setOutputKeyClass(Class outKey) {
+        outputKeyClass = outKey;
+    }
+
+    public void setOutputValueClass(Class outValue) {
+        outputKeyClass = outValue;
+    }
+
+    //TODO: Identify the purpose of this method
+    public void setJarByClass(Class jarClass) throws ClassNotFoundException {
+        ClassLoader classLoader = jarClass.getClassLoader();
+        job.jar = classLoader.loadClass(jarClass.getName());
+    }
+
+
+    public void reducerTask(String outputBucket, String instanceIp) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, IOException, Exception {
+
+        getFileFromS3(outputBucket, instanceIp + "/output", "reducelocal");
+
+        //TODO: How to get data types for reduce method dynamically?
+        Class[] cArgs = new Class[3];
+        cArgs[0] = outputKeyClass;//Text.class;
+        cArgs[1] = CustomIterable.class;
+        cArgs[2] = Context.class;
+        Method reduceMethod = job.reducerCls.getMethod("reduce", cArgs);
+//      //Context<Text, IntWritable> reduceContext = new ReducerContext();
+        Context reduceContext = new ReducerContext();
+        reduceContext.foldername = "output";
+        reduceContext.instance = instanceIp;
 
 //		HashMap<String,ArrayList<IntWritable>> wordMap = new HashMap<String,ArrayList<IntWritable>>();
 
-		File tempFiles = new File("reducelocal/"+instanceIp+"/output");
-		job.partFiles = tempFiles.listFiles();
+        File tempFiles = new File("reducelocal/" + instanceIp + "/output");
+        job.partFiles = tempFiles.listFiles();
 
-		IntWritable one = new IntWritable(1);
+        IntWritable one = new IntWritable(1);
 
-        for(int i=0; i<job.partFiles.length;i++)
-        {
-            Text text = new Text();
-			text.set(job.partFiles[i].getName());
+        for (int i = 0; i < job.partFiles.length; i++) {
+//            DataType key = cArgs[0].newInstance();
+            Text key = new Text();
+            key.set(job.partFiles[i].getName());
             Iterator itr = FileUtils.lineIterator(job.partFiles[i], "UTF-8");
             CustomIterable cIterable = new CustomIterable(itr);
-            reduceMethod.invoke(job.reducerInstance,text,cIterable,reduceContext);
+            cIterable.setDataType(job.outputValueClass);
+            reduceMethod.invoke(job.reducerInstance, key, cIterable, reduceContext);
         }
 
-		//TODO: This logic of writing into a HashMap should be changed
 //		for(int i=0; i<job.partFiles.length;i++)
 //		{
 //			FileReader fileReader = new FileReader(job.partFiles[i]);
@@ -181,162 +189,142 @@ public class Job {
 //
 //			reduceMethod.invoke(job.reducerInstance,text,itr,reduceContext);
 //		}
-	}
+    }
 
 
-	//Upload a directory from local folder to given S3Folder
-	public static void uploadToS3(String bucketName, String toS3Folder, String fromLocalFolder)
-	{
-		try
-		{
-			File from =new File(fromLocalFolder);
-			System.out.println("Uploading files to S3 from a EC2 instance\n");
+    //Upload a directory from local folder to given S3Folder
+    public static void uploadToS3(String bucketName, String toS3Folder, String fromLocalFolder) {
+        try {
+            File from = new File(fromLocalFolder);
+            System.out.println("Uploading files to S3 from a EC2 instance\n");
 
-			TransferManager tx = new TransferManager(credentials);
-			MultipleFileUpload mu =  tx.uploadDirectory(bucketName, toS3Folder,from,true);
+            TransferManager tx = new TransferManager(credentials);
+            MultipleFileUpload mu = tx.uploadDirectory(bucketName, toS3Folder, from, true);
 
-			System.out.println("Waiting while uploading to S3");
-			mu.waitForCompletion();
-			System.out.println("Files uploading to S3 completed");
-		}
-		catch(AmazonServiceException ase)
-		{
-			ase.printStackTrace();
-		}
-		catch(AmazonClientException ace)
-		{
-			ace.printStackTrace();
-		}
-		catch(Exception e)
-		{
-			e.printStackTrace();
-		}
-	}
+            System.out.println("Waiting while uploading to S3");
+            mu.waitForCompletion();
+            System.out.println("Files uploading to S3 completed");
+        } catch (AmazonServiceException ase) {
+            ase.printStackTrace();
+        } catch (AmazonClientException ace) {
+            ace.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
 
-	private static void getFileFromS3(String bucketName, String fromS3Folder, String toLocalFolder)
-	{
-		try
-		{
+    private static void getFileFromS3(String bucketName, String fromS3Folder, String toLocalFolder) {
+        try {
 
-			File localFolder = new File(toLocalFolder);
-			if(!localFolder.exists())
-				localFolder.mkdirs();
+            File localFolder = new File(toLocalFolder);
+            if (!localFolder.exists())
+                localFolder.mkdirs();
 
-			TransferManager tx = new TransferManager(credentials);
-			MultipleFileDownload md = tx.downloadDirectory(bucketName, fromS3Folder, localFolder);
-			System.out.println("Waiting for files to download from S3");
-			md.waitForCompletion();
-			System.out.println("Files downloading from S3 to local folder completed");
-		}
-		catch(AmazonServiceException ase)
-		{
-			ase.printStackTrace();
-		}
-		catch(AmazonClientException ace)
-		{
-			ace.printStackTrace();
-		}
-		catch(Exception e)
-		{
-			e.printStackTrace();
-		}
-	}
+            TransferManager tx = new TransferManager(credentials);
+            MultipleFileDownload md = tx.downloadDirectory(bucketName, fromS3Folder, localFolder);
+            System.out.println("Waiting for files to download from S3");
+            md.waitForCompletion();
+            System.out.println("Files downloading from S3 to local folder completed");
+        } catch (AmazonServiceException ase) {
+            ase.printStackTrace();
+        } catch (AmazonClientException ace) {
+            ace.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-	public void mapperTask(String inputBucket, String instanceIp) throws NoSuchMethodException, SecurityException, IOException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, InterruptedException, Exception
-	{
+    public void mapperTask(String inputBucket, String instanceIp) throws NoSuchMethodException, SecurityException, IOException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, InterruptedException, Exception {
 
-		getFileFromS3(inputBucket,instanceIp,"inputlocal");
+        getFileFromS3(inputBucket, instanceIp, "inputlocal");
 
 
-		String line = null;
-		
-		//TODO: How to get data types for reduce method dynamically?
-		Class[] cArgs = new Class[3];
-		cArgs[0] = Object.class;
-		cArgs[1] = Text.class;
-		cArgs[2] = Context.class;
+        String line = null;
 
-		System.out.println("Mapper class instantiated..");
-		Method mapMethod = job.mapperCls.getMethod("map",cArgs);
+        Class[] cArgs = new Class[3];
+        cArgs[0] = Object.class;
+        cArgs[1] = Text.class;
+        cArgs[2] = Context.class;
 
-		Context mapContext = new Context();
-		mapContext.foldername = instanceIp+"/tempFiles";
+        System.out.println("Mapper class instantiated..");
+        Method mapMethod = job.mapperCls.getMethod("map", cArgs);
 
-
-		File inputDir = new File("inputlocal/"+instanceIp+"/input");
-
-		System.out.println("input file path: "+inputDir.getAbsolutePath());
+//        Context<Text,IntWritable> mapContext = new MapperContext();
+        Context mapContext = new MapperContext();
+        mapContext.instance = instanceIp;
+        mapContext.foldername = instanceIp + "/tempFiles";
 
 
-		System.out.println("for each file in inputlocal/"+instanceIp+"/input:");
-		for(File inputFile : inputDir.listFiles())
-		{
-			FileReader fileReader = new FileReader(inputFile);
-			BufferedReader bufferedReader = new BufferedReader(fileReader);
+        File inputDir = new File("inputlocal/" + instanceIp + "/input");
 
-			Text text = new Text();
-			System.out.println("calling map method in mapper task");
-			while((line = bufferedReader.readLine())!= null)
-			{		
-				text.set(line);
-				mapMethod.invoke(job.mapperInstance,new Object(),text,mapContext);
-
-			}
-			bufferedReader.close();
-		}
-	}
-
-	public void waitForCompletion(Boolean bool) throws NoSuchMethodException, SecurityException, IOException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, Exception
-	{
-
-		System.out.println("start - waitForCompletion");
-		int port = 3002;
-		String ip = InetAddress.getLocalHost().getHostAddress();
-
-		System.out.println("IPAddress of this ec2 instance: "+ip);
-		TextSocket.Server svr = new TextSocket.Server(port);
-
-		TextSocket conn;
-
-		while (null != (conn = svr.accept())) {
-			System.out.println("Server is listening....");
-
-			String inputBucket = conn.getln();
-
-			//the instance ip address sent from the client is the input folder for this instance
-			String instanceIp = conn.getln();
-			String outputBucket = conn.getln();
-
-			String command = conn.getln();
-
-			if(command.equals("MAPPER_START"))
-				mapperTask(inputBucket,instanceIp);
-			else
-				System.out.println("Expected Command: MAPPER_START. Received command: "+command);
+        System.out.println("input file path: " + inputDir.getAbsolutePath());
 
 
-			System.out.println("Copying key files from Mapper to S3");
-			//copy temp files after Mapper to S3
-			uploadToS3(inputBucket, instanceIp+"/tempFiles",instanceIp+"/tempFiles");
+        System.out.println("for each file in inputlocal/" + instanceIp + "/input:");
+        for (File inputFile : inputDir.listFiles()) {
+            FileReader fileReader = new FileReader(inputFile);
+            BufferedReader bufferedReader = new BufferedReader(fileReader);
 
-			System.out.println("key files from Mapper uploaded to S3");
+            Text text = new Text();
+            System.out.println("calling map method in mapper task");
+            while ((line = bufferedReader.readLine()) != null) {
+                text.set(line);
+                mapMethod.invoke(job.mapperInstance, new Object(), text, mapContext);
 
-			conn.putln("MAPPER_COMPLETE");
+            }
+            bufferedReader.close();
+        }
+    }
 
-			if(conn.getln().equals("REDUCER_START"))
-			{
-				reducerTask(inputBucket, instanceIp);
-			}            
+    public void waitForCompletion(Boolean bool) throws NoSuchMethodException, SecurityException, IOException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, Exception {
 
-			uploadToS3(outputBucket, "output", "output");
-			conn.putln("REDUCER_COMPLETE");
+        System.out.println("start - waitForCompletion");
+        int port = 3002;
+        String ip = InetAddress.getLocalHost().getHostAddress();
 
-			System.out.println("Closing socket...");
-			conn.close();
-			svr.close();
-			break;
-		}    
+        System.out.println("IPAddress of this ec2 instance: " + ip);
+        TextSocket.Server svr = new TextSocket.Server(port);
 
-	}
+        TextSocket conn;
+
+        while (null != (conn = svr.accept())) {
+            System.out.println("Server is listening....");
+
+            String inputBucket = conn.getln();
+
+            //the instance ip address sent from the client is the input folder for this instance
+            String instanceIp = conn.getln();
+            String outputBucket = conn.getln();
+
+            String command = conn.getln();
+
+            if (command.equals("MAPPER_START"))
+                mapperTask(inputBucket, instanceIp);
+            else
+                System.out.println("Expected Command: MAPPER_START. Received command: " + command);
+
+
+            System.out.println("Copying key files from Mapper to S3");
+            //copy temp files after Mapper to S3
+            uploadToS3(inputBucket, instanceIp + "/tempFiles", instanceIp + "/tempFiles");
+
+            System.out.println("key files from Mapper uploaded to S3");
+
+            conn.putln("MAPPER_COMPLETE");
+
+            if (conn.getln().equals("REDUCER_START")) {
+                reducerTask(inputBucket, instanceIp);
+            }
+
+            uploadToS3(outputBucket, "output", "output");
+            conn.putln("REDUCER_COMPLETE");
+
+            System.out.println("Closing socket...");
+            conn.close();
+            svr.close();
+            break;
+        }
+
+    }
 }

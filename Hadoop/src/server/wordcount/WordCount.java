@@ -36,7 +36,7 @@ public class WordCount {
 	public static class WordCountRedcuer extends Reducer<Text, CustomIterable, Text, IntWritable>
 	{	
 		//TODO: Throw error if the data types doesn't match
-		public void reduce(Text key, CustomIterable values, Context context) throws IOException
+		public void reduce(Text key, CustomIterable values, Context context) throws Exception
 		{
 			IntWritable sum = new IntWritable(0);
 			
@@ -63,8 +63,8 @@ public class WordCount {
 			job.setMapperClass(WordCountMapper.class);
 			job.setReducerClass(WordCountRedcuer.class);
 			//TODO: Implement setOutput
-//			job.setOutputKeyClass(Text.class)
-//			job.setOutputValueClass(Intwritable.class)
+			job.setOutputKeyClass(Text.class);
+			job.setOutputValueClass(IntWritable.class);
 			job.setNumReduceTasks(1);
 			// FileInputFormat.addInputPath(job, args[0]);
 			// FileOutputFormat.setOutputPath(job,args[1]);
