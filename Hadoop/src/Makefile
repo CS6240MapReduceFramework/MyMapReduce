@@ -1,7 +1,7 @@
 run:
-	bash start-cluster.sh 2 distributed
-	bash my-mapreduce.sh ${ARGS} s3://ccshabiba/input s3://ccshabiba/output distributed
-	bash stop-cluster.sh
+	bash start-cluster.sh 2 pseudo
+	bash my-mapreduce.sh ${ARGS} s3://kvs3test/input s3://kvs3test/output pseudo
+	# bash stop-cluster.sh
 
 all:
 	(cd textsock && make)
@@ -17,7 +17,11 @@ clean:
 	(cd server/${ARGS} && rm -rf target project/target project/project wordcount.jar)
 	(cd client/ && rm -rf allTempFiles)
 	(cd client/ && rm -rf FinalOutput)
-
+	(rm -rf 127.0.1.1_300*/)
+	(rm -rf inputlocal/)
+	(rm -rf reducelocal/)
+	(rm -rf output/)
+	(rm -rf *300*)
 .PHONY: all clean
 	#Test
 
