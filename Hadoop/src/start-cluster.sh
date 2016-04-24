@@ -1,6 +1,6 @@
 #!/bin/bash
-secGroup="devenv-sg"
-keyPair="firstKeyPair"
+secGroup="launch-wizard-1"
+keyPair="kaushikfinaaws"
 
 noOfInst=$1
 pseudoDistributed=$2

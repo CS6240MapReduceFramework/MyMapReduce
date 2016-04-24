@@ -1,0 +1,23 @@
+repositories {
+	mavenCentral()
+}
+
+apply plugin: "java"
+
+dependencies {
+	compile "nz.ac.waikato.cms.weka:weka-stable:3.6.6"
+	compile "org.apache.hadoop:hadoop-common:2.6.3"
+	compile "org.apache.hadoop:hadoop-mapreduce-client-core:2.6.3"
+	compile "org.apache.hadoop:hadoop-mapreduce-client-common:2.6.3"
+}
+
+sourceSets {
+	main.java.srcDir "src"
+}
+
+jar {
+	from configurations.compile.collect { entry -> zipTree(entry) }
+	manifest.attributes "Main-Class": "neelux.Main"
+}
+
+

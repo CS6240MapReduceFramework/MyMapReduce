@@ -1,5 +1,5 @@
 #!/bin/bash
-keyPair="firstKeyPair"
+keyPair="kaushikfinaaws"
 
 make all
 cd server/$1 && sbt assembly && mv target/scala-*/$1*.jar ../../server.jar
@@ -46,12 +46,14 @@ else
 		echo "killing process in port: "$port
         pid=$(lsof -i:$port -t); kill -TERM $pid || kill -KILL $pid
         echo "pseudo;127.0.1.1;"$port>>instances.txt
-        java -jar server.jar > server_log.txt &
+        java -jar server.jar > server_$port.txt &
         port=$((port+1))
         i=$((i+1))
 		echo "=============================================="
+		sleep 50
     done
 	
 	cp instances.txt client/
+	cd client && java -jar client.jar $2 $3
 
 fi
