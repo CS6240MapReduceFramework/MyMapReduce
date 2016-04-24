@@ -147,7 +147,17 @@ public class Job {
             return false;
         }
         job.partFiles = tempFiles.listFiles();
+
         System.out.println("Reducer Started");
+
+        File fdir = new File("output");
+        if (!fdir.exists())
+            fdir.mkdirs();
+
+        File f = new File("output/part-" + instanceIp);
+        if (!f.exists())
+            f.createNewFile();
+
         for (int i = 0; i < job.partFiles.length; i++) {
             if (job.outputKeyClass.equals(IntWritable.class)) {
 
@@ -288,12 +298,12 @@ public class Job {
         int port = 3002;
         while (sc.hasNextLine()) {
             String[] line = sc.nextLine().split(";");
+            System.out.println("IPAddress of this ec2 instance: " + line[1]);
             port = Integer.parseInt(line[2]);
         }
 
         String ip = InetAddress.getLocalHost().getHostAddress();
 
-        System.out.println("IPAddress of this ec2 instance: " + ip);
         System.out.println("Port : " + port);
         TextSocket.Server svr = new TextSocket.Server(port);
 

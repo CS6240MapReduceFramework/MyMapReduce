@@ -211,10 +211,10 @@ public class WebClient {
         int chunk_size = files.size() / instancesCount;
         int remaining_chunk_size = files.size() % instancesCount;
 
-        System.out.println("Total number of input files (after division) - " + files.size());
+        System.out.println("Total number of files (after division) - " + files.size());
 
         int instance = 0;
-        System.out.println("Copying files to respective intance input folders...");
+        System.out.println("Copying files to respective instance folders...");
 
         for (int i = 0; i < files.size(); i++) {
             try {
@@ -444,7 +444,7 @@ public class WebClient {
         outputPath = outputDataLocatonSplits[1];
 
         System.out.println("Input Bucket - " + inputBucket);
-        System.out.printf("Output Bucket - " + outputBucket);
+        System.out.println("Output Bucket - " + outputBucket);
         System.out.println("Input path in s3 - " + inputPath);
         System.out.println("Output path in s3 - " + outputPath);
 
@@ -474,7 +474,7 @@ public class WebClient {
             ips_ports[count] = instanceIp + "_" + portNum;
 
             int port = Integer.parseInt(line[2]);
-            System.out.println("Establishing connection to: " + instanceIp);
+            System.out.println("Establishing connection to: " + instanceIp + " and port - " + port);
             TextSocket conn = new TextSocket(instanceIp, port);
 
             System.out.println("Connection established..");
@@ -518,6 +518,7 @@ public class WebClient {
 
         downloadOutputPartFilesFromS3(ips_ports, outputBucket);
 
+        System.exit(0);
     }
 
 }

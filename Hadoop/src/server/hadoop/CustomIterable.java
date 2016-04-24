@@ -24,13 +24,13 @@ public class CustomIterable<T> {
             //wordcount and wordmedian
             IntWritable value = new IntWritable();
             value.set(Integer.parseInt((String) iterator.next()));
-            System.out.println("Returning intwritable - "+value.get());
+//            System.out.println("Returning intwritable - "+value.get());
             return (T)value;
         } else if (dataType.equals(Text.class)) {
             //A2
             Text value = new Text();
             value.set((String) iterator.next());
-            System.out.println("returning string - "+value.get());
+//            System.out.println("returning string - "+value.get());
             return (T)value;
         }
         return null;
