@@ -129,7 +129,7 @@ public class Job {
 
     public boolean reducerTask(String outputBucket, String instanceIp) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, IOException, Exception {
 
-        getFileFromS3(outputBucket, instanceIp + "/output", "reducelocal");
+        getFileFromS3(outputBucket, instanceIp + "/merged", "reducelocal");
 
         Class[] cArgs = new Class[3];
         cArgs[0] = outputKeyClass;
@@ -141,7 +141,7 @@ public class Job {
         reduceContext.instance = instanceIp;
         reduceContext.phase = "REDUCER";
 
-        File tempFiles = new File("reducelocal/" + instanceIp + "/output");
+        File tempFiles = new File("reducelocal/" + instanceIp + "/merged");
 
         if (!tempFiles.exists()) {
             return false;
@@ -280,11 +280,9 @@ public class Job {
 
     public void waitForCompletion(Boolean bool) throws NoSuchMethodException, SecurityException, IOException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, Exception {
 
-        System.out.println("start - waitForCompletion");
-
+        System.out.println("Mapreduce job started...");
 
         //Read the instances.txt file for port number
-        System.out.println("Reading instances.txt file for port number");
         Scanner sc = new Scanner(new File("instances.txt"));
         int instances_num = Integer.parseInt(sc.nextLine());
         int port = 3002;
@@ -308,6 +306,8 @@ public class Job {
 
             //the instance ip address sent from the client is the input folder for this instance
             instanceIp = conn.getln();
+            String portNum = conn.getln();
+            instanceIp = instanceIp + "_" + portNum;
             outputBucket = conn.getln();
 
             String command = conn.getln();

@@ -375,7 +375,7 @@ public class A5 {
 			return false;
 		}
 		
-		public void reduce(Text key, Iterable<Text> values, Context context)  
+		public void reduce(Text key, CustomIterable<Text> values, Context context)
 			throws IOException, InterruptedException {
 			
 			/**
