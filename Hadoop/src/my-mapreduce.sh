@@ -1,9 +1,9 @@
 #!/bin/bash
 keyPair="firstKeyPair"
 
-#make all
-#cd server/$1 && sbt assembly && mv target/scala-*/$1*.jar ../../server.jar
-#cd ../..
+make all
+cd server/$1 && sbt assembly && mv target/scala-*/$1*.jar ../../server.jar
+cd ../..
 pseudoDistributed=$4
 
 if [ $pseudoDistributed == "distributed" ]; then
