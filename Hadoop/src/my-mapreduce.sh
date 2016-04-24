@@ -1,9 +1,9 @@
 #!/bin/bash
 keyPair="firstKeyPair"
 
-make all
-cd server/$1 && sbt assembly && mv target/scala-*/$1*.jar ../../server.jar
-cd ../..
+#make all
+#cd server/$1 && sbt assembly && mv target/scala-*/$1*.jar ../../server.jar
+#cd ../..
 pseudoDistributed=$4
 
 if [ $pseudoDistributed == "distributed" ]; then
@@ -45,7 +45,7 @@ else
     do
 		echo "killing process in port: "$port
         pid=$(lsof -i:$port -t); kill -TERM $pid || kill -KILL $pid
-        echo "psuedo;127.0.1.1;"$port>>instances.txt
+        echo "pseudo;127.0.1.1;"$port>>instances.txt
         java -jar server.jar > server_log.txt &
         port=$((port+1))
         i=$((i+1))

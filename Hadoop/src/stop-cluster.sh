@@ -6,9 +6,11 @@ do
 		array=(${line//;/ })
 		insId="${array[0]}"
 		echo "Stopping - $insId"
-		aws ec2 stop-instances --instance-ids $insId
+		if [ $insId != "pseudo" ]; then
+			aws ec2 stop-instances --instance-ids $insId
+		fi
 	fi
 	i=$((i+1))
 done < "instances.txt"
-
+sleep 10
 rm -rf instances.txt client/instances.txt
