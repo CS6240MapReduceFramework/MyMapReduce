@@ -38,21 +38,18 @@ else
 		noOfInst=$((line))
 	done < "instances.txt"
 
-	echo "========================================================"
-	echo $noOfInst
-	echo $((noOfInst+1))
-	echo "========================================================"
-
 	port=3001
 	i=0
 	
 	while [ $i -lt $noOfInst ];
     do
+		echo "killing process in port: "$port
         pid=$(lsof -i:$port -t); kill -TERM $pid || kill -KILL $pid
         echo "psuedo;127.0.1.1;"$port>>instances.txt
         java -jar server.jar > server_log.txt &
         port=$((port+1))
         i=$((i+1))
+		echo "=============================================="
     done
 	
 	cp instances.txt client/
