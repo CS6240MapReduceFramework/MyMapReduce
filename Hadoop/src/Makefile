@@ -1,6 +1,6 @@
 run:
-	bash start-cluster.sh 2 pseudo
-	bash my-mapreduce.sh wordcount s3://neel-third/input s3://neel-third/output pseudo
+	bash start-cluster.sh 2 distributed
+	bash my-mapreduce.sh ${ARGS} s3://ccshabiba/input s3://ccshabiba/output distributed
 	bash stop-cluster.sh
 
 all:
@@ -14,7 +14,7 @@ clean:
 	(cd client && rm -rf client.jar instances.txt server.jar output target project/target project/project)
 	(cd server && rm -rf server.jar instances.txt target project/target project/project)
 	(cd server/hadoop && rm -rf target project/target project/project)
-	(cd server/wordcount && rm -rf target project/target project/project wordcount.jar)
+	(cd server/${ARGS} && rm -rf target project/target project/project wordcount.jar)
 	(cd client/ && rm -rf allTempFiles)
 	(cd client/ && rm -rf FinalOutput)
 
