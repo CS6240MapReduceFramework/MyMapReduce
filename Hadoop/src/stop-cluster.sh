@@ -1,5 +1,4 @@
 #!/bin/bash
-filename="client/instances.txt"
 i=0
 while read -r line
 do
@@ -10,6 +9,6 @@ do
 		aws ec2 stop-instances --instance-ids $insId
 	fi
 	i=$((i+1))
-done < "$filename"
+done < "instances.txt"
 
-rm -rf $filename
+rm -rf instances.txt client/instances.txt
