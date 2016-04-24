@@ -219,8 +219,8 @@ public class A2 {
     public static class CsvReducer extends Reducer<Text,Text,Text,Text> {
         Text customTextVal = new Text();
          
-        @Override
-        public void reduce(Text key, Iterable<Text> values, Context context ) throws IOException, InterruptedException {
+//        @Override
+        public void reduce(Text key, CustomIterable<Text> values, Context context ) throws IOException, InterruptedException, Exception {
             int counter = 0;
             boolean active = false;
             String eachValue;
@@ -233,11 +233,15 @@ public class A2 {
                 monthCounter[i] = 0;
             }
              
-            for (Text val : values) {
+//            for (Text val : values) {
+            while(values.hasNext()){
+
+                Text val = values.next();
                 counter ++;
                 eachValue= val.toString();
+                System.out.println(eachValue);
                 valuesArray = eachValue.split("-");
-                if(valuesArray[0].equals("2015")){
+                if(valuesArray[0].equals("2013")){
                     active=true;
                 }
                  
@@ -267,8 +271,8 @@ public class A2 {
 		try
 		{
 			Configuration conf = new Configuration();
-		    Job job = Job.getInstance(conf, "csv");
-		    job.setJarByClass(Main.class);
+		    job = Job.getInstance(conf, "csv");
+//		    job.setJarByClass(Main.class);
 		    job.setMapperClass(CsvMapper.class);
 		    job.setReducerClass(CsvReducer.class);
 		    job.setOutputKeyClass(Text.class);

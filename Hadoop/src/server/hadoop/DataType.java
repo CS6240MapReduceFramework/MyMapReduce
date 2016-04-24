@@ -10,7 +10,7 @@ public class DataType {
     }
 
     public void set(int i){
-        System.out.println("In set");
+        System.out.println("In Datatype's set - Something wrong!");
     }
 
 }

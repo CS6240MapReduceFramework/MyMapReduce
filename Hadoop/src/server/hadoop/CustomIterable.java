@@ -2,23 +2,7 @@ package hadoop;
 
 import java.util.Iterator;
 
-//class GenericType<GT> {
-//    GT obT;
-//
-//    GenericType(GT o) {
-//        obT = o;
-//    }
-//
-//    GT getValue() {
-//        return obT;
-//    }
-//
-//    void showType() {
-//        System.out.println("Type of GT is " + obT.getClass().getName());
-//    }
-//}
-
-public class CustomIterable{
+public class CustomIterable<T> {
 
     private Iterator iterator;
     public Class<?> dataType;
@@ -35,44 +19,23 @@ public class CustomIterable{
         return iterator.hasNext();
     }
 
-    public IntWritable next() throws Exception{
-//        if (dataType.getClass().equals(IntWritable.class)) {
+    public T next() throws Exception {
+        if (dataType.equals(IntWritable.class)) {
+            //wordcount and wordmedian
             IntWritable value = new IntWritable();
             value.set(Integer.parseInt((String) iterator.next()));
-            return value;
-//        } else if (dataType.getClass().equals(Text.class)) {
-//            Text value = new Text();
-//            value.set((String) iterator.next());
-//            return value;
-//        }
-//        return null;
-
-//        GenericType<T> returnValue = new GenericType<T>(Integer.parseInt((String)iterator.next()));
-//        GenericType<T> returnValue = new GenericType<T>(iterator.next());
+            System.out.println("Returning intwritable - "+value.get());
+            return (T)value;
+        } else if (dataType.equals(Text.class)) {
+            //A2
+            Text value = new Text();
+            value.set((String) iterator.next());
+            System.out.println("returning string - "+value.get());
+            return (T)value;
+        }
+        return null;
     }
 }
 
 
-//
-//    public CustomIterable(int start, int end) {
-//        this.cursor = start;
-//        this.end = end;
-//    }
-//
-//    public T next() {
-//
-//        if (this.hasNext()) {
-//            int current = cursor;
-//            cursor++;
-//            GenericType<T> returnValue=new GenericType<T>(current);
-//            return returnValue.getValue();
-//        }
-//    }
-//
-//    public boolean hasNext() {
-//        return this.cursor < end;
-//    }
-//
-//    public void remove() {
-//        throw new UnsupportedOperationException();
-//    }
+

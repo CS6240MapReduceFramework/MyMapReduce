@@ -28,7 +28,7 @@ public class WebClient {
 
     static Properties prop = new Properties();
     public static int partCounter = 1;
-    public static int sizeOfFiles = 1024 * 50; //1024 * 128;
+    public static int sizeOfFiles = 1024 * 1024 * 128;
     public static byte[] buffer = new byte[sizeOfFiles];
 
     static {

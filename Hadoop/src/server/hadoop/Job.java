@@ -41,6 +41,7 @@ public class Job {
     public Class<?> outputKeyClass;
     public Class<?> outputValueClass;
     public Object reducerInstance;
+    public String outputBucket;
     private Class jar;
     private static Job job;
     public int NUM_REDUCE_TASKS = 1;
@@ -51,7 +52,7 @@ public class Job {
     public File[] partFiles;
     public static boolean reducerComplete = false;
     private static int MapRecordCount = 0;
-
+    public static String instanceIp;
     static Properties prop = new Properties();
 
     static {
@@ -130,19 +131,15 @@ public class Job {
 
         getFileFromS3(outputBucket, instanceIp + "/output", "reducelocal");
 
-        //TODO: How to get data types for reduce method dynamically?
         Class[] cArgs = new Class[3];
         cArgs[0] = outputKeyClass;
         cArgs[1] = CustomIterable.class;
         cArgs[2] = Context.class;
         Method reduceMethod = job.reducerCls.getMethod("reduce", cArgs);
-//      //Context<Text, IntWritable> reduceContext = new ReducerContext();
         Context reduceContext = new Context();
         reduceContext.foldername = "output";
         reduceContext.instance = instanceIp;
         reduceContext.phase = "REDUCER";
-
-//		HashMap<String,ArrayList<IntWritable>> wordMap = new HashMap<String,ArrayList<IntWritable>>();
 
         File tempFiles = new File("reducelocal/" + instanceIp + "/output");
 
@@ -150,55 +147,41 @@ public class Job {
             return false;
         }
         job.partFiles = tempFiles.listFiles();
-
-        IntWritable one = new IntWritable(1);
-
+        System.out.println("Reducer Started");
         for (int i = 0; i < job.partFiles.length; i++) {
-//            DataType key = cArgs[0].newInstance();
-            Text key = new Text();
-            key.set(job.partFiles[i].getName());
-            Iterator itr = FileUtils.lineIterator(job.partFiles[i], "UTF-8");
-            CustomIterable cIterable = new CustomIterable(itr);
-            cIterable.setDataType(job.outputValueClass);
-            reduceMethod.invoke(job.reducerInstance, key, cIterable, reduceContext);
-        }
+            if (job.outputKeyClass.equals(IntWritable.class)) {
 
-//		for(int i=0; i<job.partFiles.length;i++)
-//		{
-//			FileReader fileReader = new FileReader(job.partFiles[i]);
-//			BufferedReader bufferedReader = new BufferedReader(fileReader);
-//
-//
-//			String line = null;
-//			while((line = bufferedReader.readLine())!= null)
-//			{
-//				String[] lines = line.split("\t");
-//				if(wordMap.containsKey(lines[0]))
-//				{
-//					ArrayList<IntWritable> list = wordMap.get(lines[0]);
-//					list.add(one);
-//					wordMap.put(lines[0],list);
-//				}
-//				else
-//				{
-//					ArrayList<IntWritable> list = new ArrayList<IntWritable>();
-//					list.add(one);
-//					wordMap.put(lines[0], list);
-//				}
-//			}
-//			bufferedReader.close();
-//		}
-//
-//		//invoke reduce method for each key
-//		for(String key : wordMap.keySet())
-//		{
-//			Text text = new Text();
-//			text.set(key);
-//
-//			Iterator<IntWritable> itr = wordMap.get(key).iterator();
-//
-//			reduceMethod.invoke(job.reducerInstance,text,itr,reduceContext);
-//		}
+                IntWritable key = new IntWritable();
+                key.set(Integer.parseInt(job.partFiles[i].getName()));
+
+                Iterator itr = FileUtils.lineIterator(job.partFiles[i], "UTF-8");
+                if (job.outputValueClass.equals(Text.class)) {
+                    CustomIterable<Text> cIterable = new CustomIterable(itr);
+                    cIterable.setDataType(job.outputValueClass);
+                    reduceMethod.invoke(job.reducerInstance, key, cIterable, reduceContext);
+                } else if (job.outputValueClass.equals(IntWritable.class)) {
+                    CustomIterable<IntWritable> cIterable = new CustomIterable(itr);
+                    cIterable.setDataType(job.outputValueClass);
+                    reduceMethod.invoke(job.reducerInstance, key, cIterable, reduceContext);
+                }
+
+            } else if (job.outputKeyClass.equals(Text.class)) {
+                Text key = new Text();
+                key.set(job.partFiles[i].getName());
+
+                Iterator itr = FileUtils.lineIterator(job.partFiles[i], "UTF-8");
+                if (job.outputValueClass.equals(Text.class)) {
+                    CustomIterable<Text> cIterable = new CustomIterable(itr);
+                    cIterable.setDataType(job.outputValueClass);
+                    reduceMethod.invoke(job.reducerInstance, key, cIterable, reduceContext);
+                } else if (job.outputValueClass.equals(IntWritable.class)) {
+                    CustomIterable<IntWritable> cIterable = new CustomIterable(itr);
+                    cIterable.setDataType(job.outputValueClass);
+                    reduceMethod.invoke(job.reducerInstance, key, cIterable, reduceContext);
+                }
+            }
+
+        }
         return true;
     }
 
@@ -313,7 +296,7 @@ public class Job {
         String ip = InetAddress.getLocalHost().getHostAddress();
 
         System.out.println("IPAddress of this ec2 instance: " + ip);
-        System.out.println("Port : "+port);
+        System.out.println("Port : " + port);
         TextSocket.Server svr = new TextSocket.Server(port);
 
         TextSocket conn;
@@ -324,8 +307,8 @@ public class Job {
             String inputBucket = conn.getln();
 
             //the instance ip address sent from the client is the input folder for this instance
-            String instanceIp = conn.getln();
-            String outputBucket = conn.getln();
+            instanceIp = conn.getln();
+            outputBucket = conn.getln();
 
             String command = conn.getln();
 
