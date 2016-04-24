@@ -1,6 +1,6 @@
 #!/bin/bash
-secGroup="launch-wizard-1"
-keyPair="kaushikfinaaws"
+secGroup="devenv-sg"
+keyPair="firstKeyPair"
 
 noOfInst=$1
 pseudoDistributed=$2
@@ -39,29 +39,14 @@ if [ $pseudoDistributed == "distributed" ]; then
     	i=$((i+1))
     	echo "---------------------------"
     done
-
-#Pseudo Mode
+	cp instances.txt client/
+	
 else
+
+	#Pseudo Mode
     echo "Running in Pseudo Mode";
-    port=3000
-    i=0
-  
-    while [ $i -lt $noOfInst ];
-    do
-
-        pid=$(lsof -i:$port -t); kill -TERM $pid || kill -KILL $pid
-
-        echo "psuedo;127.0.1.1;"$port>>instances.txt
-
-        echo "executing jar"
-        
-
-        java -jar server.jar > server_log.txt &
-
-        port=$((port+1))
-        i=$((i+1))
-    done
+	echo $noOfInst>instances.txt
+	sleep 5
 fi
 
-cp instances.txt client/instances.txt
 
