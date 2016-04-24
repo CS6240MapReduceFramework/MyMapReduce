@@ -1,6 +1,6 @@
 #!/bin/bash
 secGroup="launch-wizard-1"
-keyPair="CCS_AWS_Key"
+keyPair="kaushikfinaaws"
 
 noOfInst=$1
 pseudoDistributed=$2
@@ -63,5 +63,5 @@ else
     done
 fi
 
-mv instances.txt client/instances.txt
+cp instances.txt client/instances.txt
 
