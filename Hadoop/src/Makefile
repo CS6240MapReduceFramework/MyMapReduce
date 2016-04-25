@@ -1,7 +1,7 @@
 run:
 	bash start-cluster.sh 2 pseudo
 	bash my-mapreduce.sh ${ARGS} s3://kvs3test/input s3://kvs3test/output pseudo
-	# bash stop-cluster.sh
+	bash stop-cluster.sh
 
 all:
 	(cd textsock && make)
