@@ -94,19 +94,6 @@ public class Job {
         mapperInstance = mapperCls.newInstance();
     }
 
-    /**
-     * Loads the given .class file and assigns the instance to partitionerInstance 
-     * @param partitionerClass
-     * @throws ClassNotFoundException
-     * @throws InstantiationException
-     * @throws IllegalAccessException
-     */
-    public void setPartitionerClass(Class<? extends Partitioner> partitionerClass) throws ClassNotFoundException, InstantiationException, IllegalAccessException {
-        partitionerCls = Class.forName(partitionerClass.getName());
-        partitionerInstance = partitionerCls.newInstance();
-    }
-
-
     public void setNumReduceTasks(int reduceTasks) {
         job.NUM_REDUCE_TASKS = reduceTasks;
     }
