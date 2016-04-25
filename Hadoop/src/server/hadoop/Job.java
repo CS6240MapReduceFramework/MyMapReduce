@@ -1,7 +1,6 @@
 package hadoop;
 
 import java.io.*;
-
 import com.amazonaws.*;
 import org.apache.commons.logging.*;
 import org.apache.commons.io.*;
@@ -16,14 +15,10 @@ import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.Upload;
 import com.amazonaws.services.s3.transfer.MultipleFileDownload;
 import com.amazonaws.services.s3.transfer.MultipleFileUpload;
-
 import textsock.TextSocket;
-
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
-
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.Inet4Address;
@@ -57,7 +52,6 @@ public class Job {
 
     static {
         try {
-            //Properties file should be within src folder
             prop.load(new FileInputStream("config.properties"));
         } catch (Exception e) {
             System.out.println(e.getMessage());
@@ -88,11 +82,25 @@ public class Job {
         return MapRecordCount;
     }
 
+    /**
+     * Loads the given .classs file and assigns the instance to job fields
+     * @param mapperClass - A .class class file
+     * @throws ClassNotFoundException
+     * @throws InstantiationException
+     * @throws IllegalAccessException
+     */
     public void setMapperClass(Class<? extends Mapper> mapperClass) throws ClassNotFoundException, InstantiationException, IllegalAccessException {
         mapperCls = Class.forName(mapperClass.getName());
         mapperInstance = mapperCls.newInstance();
     }
 
+    /**
+     * Loads the given .class file and assigns the instance to partitionerInstance 
+     * @param partitionerClass
+     * @throws ClassNotFoundException
+     * @throws InstantiationException
+     * @throws IllegalAccessException
+     */
     public void setPartitionerClass(Class<? extends Partitioner> partitionerClass) throws ClassNotFoundException, InstantiationException, IllegalAccessException {
         partitionerCls = Class.forName(partitionerClass.getName());
         partitionerInstance = partitionerCls.newInstance();
@@ -117,16 +125,24 @@ public class Job {
         outputValueClass = outValue;
     }
 
-    //TODO: Identify the purpose of this method
-    /*
-     * Identify the main class in the application and set the jar to the same.
-     */
     public void setJarByClass(Class jarClass) throws ClassNotFoundException {
         ClassLoader classLoader = jarClass.getClassLoader();
         job.jar = classLoader.loadClass(jarClass.getName());
     }
 
-
+    /**
+     * Invokes the reduce() for each file in the given outputBucket
+     * @param outputBucket - An S3 bucket name
+     * @param instanceIp - An IP address
+     * @return boolean - true - if reduce is completed successfully, false if no files to reduce
+     * @throws IllegalAccessException
+     * @throws IllegalArgumentException
+     * @throws InvocationTargetException
+     * @throws NoSuchMethodException
+     * @throws SecurityException
+     * @throws IOException
+     * @throws Exception
+     */
     public boolean reducerTask(String outputBucket, String instanceIp) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, IOException, Exception {
 
         getFileFromS3(outputBucket, instanceIp + "/merged", "reducelocal");
@@ -136,6 +152,7 @@ public class Job {
         cArgs[1] = CustomIterable.class;
         cArgs[2] = Context.class;
         Method reduceMethod = job.reducerCls.getMethod("reduce", cArgs);
+        
         Context reduceContext = new Context();
         reduceContext.foldername = "output";
         reduceContext.instance = instanceIp;
@@ -196,7 +213,13 @@ public class Job {
     }
 
 
-    //Upload a directory from local folder to given S3Folder
+    
+    /**
+     * Upload given local folder to s3 folder
+     * @param bucketName - A bucket name in S3
+     * @param toS3Folder - A path in S3
+     * @param fromLocalFolder - A path in local file system
+     */
     public static void uploadToS3(String bucketName, String toS3Folder, String fromLocalFolder) {
         try {
             File from = new File(fromLocalFolder);
@@ -221,6 +244,12 @@ public class Job {
     }
 
 
+    /**
+     * Download files given S3 path to local path
+     * @param bucketName - A bucket in S3
+     * @param fromS3Folder - A path in S3
+     * @param toLocalFolder - A path in local file system
+     */
     private static void getFileFromS3(String bucketName, String fromS3Folder, String toLocalFolder) {
         try {
 
@@ -242,6 +271,20 @@ public class Job {
         }
     }
 
+    /**
+     * Invokes map() for each file
+     * @param inputBucket - A bucket name in S3
+     * @param instanceIp - an IP address
+     * @return - true if run successfully, false if there are no files to run map() on
+     * @throws NoSuchMethodException
+     * @throws SecurityException
+     * @throws IOException
+     * @throws IllegalAccessException
+     * @throws IllegalArgumentException
+     * @throws InvocationTargetException
+     * @throws InterruptedException
+     * @throws Exception
+     */
     public boolean mapperTask(String inputBucket, String instanceIp) throws NoSuchMethodException, SecurityException, IOException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, InterruptedException, Exception {
 
         getFileFromS3(inputBucket, instanceIp, "inputlocal");
@@ -254,10 +297,8 @@ public class Job {
         cArgs[1] = Text.class;
         cArgs[2] = Context.class;
 
-        System.out.println("Mapper class instantiated..");
         Method mapMethod = job.mapperCls.getMethod("map", cArgs);
 
-//        Context<Text,IntWritable> mapContext = new MapperContext();
         Context mapContext = new Context();
         mapContext.instance = instanceIp;
         mapContext.foldername = instanceIp + "/tempFiles";
@@ -267,27 +308,32 @@ public class Job {
 
         if (!inputDir.exists())
             return false;
-        System.out.println("input file path: " + inputDir.getAbsolutePath());
 
-
-        System.out.println("for each file in inputlocal/" + instanceIp + "/input:");
         for (File inputFile : inputDir.listFiles()) {
             FileReader fileReader = new FileReader(inputFile);
             BufferedReader bufferedReader = new BufferedReader(fileReader);
 
             Text text = new Text();
-            System.out.println("calling map method in mapper task");
             while ((line = bufferedReader.readLine()) != null) {
                 text.set(line);
                 mapMethod.invoke(job.mapperInstance, new Object(), text, mapContext);
-
             }
             bufferedReader.close();
         }
         return true;
-
     }
 
+    /**
+     * The driver method which controls the map reduce functionality
+     * @param bool 
+     * @throws NoSuchMethodException
+     * @throws SecurityException
+     * @throws IOException
+     * @throws IllegalAccessException
+     * @throws IllegalArgumentException
+     * @throws InvocationTargetException
+     * @throws Exception
+     */
     public void waitForCompletion(Boolean bool) throws NoSuchMethodException, SecurityException, IOException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, Exception {
 
         System.out.println("Mapreduce job started...");
@@ -301,9 +347,6 @@ public class Job {
             System.out.println("IPAddress of this ec2 instance: " + line[1]);
             port = Integer.parseInt(line[2]);
         }
-
-        String ip = InetAddress.getLocalHost().getHostAddress();
-
         System.out.println("Port : " + port);
         TextSocket.Server svr = new TextSocket.Server(port);
 
@@ -313,8 +356,6 @@ public class Job {
             System.out.println("Server is listening....");
 
             String inputBucket = conn.getln();
-
-            //the instance ip address sent from the client is the input folder for this instance
             instanceIp = conn.getln();
             String portNum = conn.getln();
             instanceIp = instanceIp + "_" + portNum;
@@ -355,6 +396,5 @@ public class Job {
             svr.close();
             break;
         }
-
     }
 }

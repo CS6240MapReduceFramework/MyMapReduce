@@ -15,10 +15,20 @@ public class CustomIterable<T> {
         this.dataType = dataType;
     }
 
+    /**
+     *Returns whether or not there is a next token in the iterator
+     * @return boolean - true or false whether there is a next token in iterator
+     */
     public boolean hasNext() {
         return iterator.hasNext();
     }
 
+    
+    /**
+     * Returns next element
+     * @return - Generic data type
+     * @throws Exception
+     */
     public T next() throws Exception {
         if (dataType.equals(IntWritable.class)) {
             //wordcount and wordmedian

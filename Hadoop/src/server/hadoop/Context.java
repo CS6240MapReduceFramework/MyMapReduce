@@ -17,6 +17,12 @@ public class Context<T> {
     public static String phase;
 
 
+    
+    /**
+     * Writes the given key value pairs in specified folder name
+     * @param key - A key 
+     * @param value - A value
+     */
     public void write(T key, T value) {
 
         try {
@@ -37,7 +43,6 @@ public class Context<T> {
 
             File f = new File(filename);
 
-
             if (!f.exists())
                 f.createNewFile();
 
@@ -51,8 +56,7 @@ public class Context<T> {
             bufferedWriter.flush();
             bufferedWriter.close();
         } catch (Exception e) {
-            System.out.println("There was a problem fetching the local Host Address!!!");
-        }
+            e.printStackTrace();        }
 
     }
 

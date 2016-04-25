@@ -1,8 +1,5 @@
 package hadoop;
 
-/**
- * Created by ummehabibashaik on 4/22/16.
- */
 public class DataType {
 
     public void set(String str){
@@ -10,7 +7,7 @@ public class DataType {
     }
 
     public void set(int i){
-        System.out.println("In Datatype's set - Something wrong!");
+        System.out.println("In Datatype's set");
     }
 
 }

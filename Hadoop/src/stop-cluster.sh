@@ -1,8 +1,12 @@
 #!/bin/bash
 i=0
+
+
+# Read each line in instances.txt
 while read -r line
 do
 	if [ $i -gt 0 ]; then
+		# Splits the line with ;
 		array=(${line//;/ })
 		insId="${array[0]}"
 		echo "Stopping - $insId"
