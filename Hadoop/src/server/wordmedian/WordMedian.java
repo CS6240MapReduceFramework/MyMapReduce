@@ -1,6 +1,7 @@
 package wordmedian;
 
 import java.io.*;
+import java.util.*;
 import java.util.ArrayList;
 import java.util.Properties;
 import java.util.StringTokenizer;
@@ -180,7 +181,18 @@ public class WordMedian {
             job.waitForCompletion(true);
 
             //TODO: Counters
-            long totalWords = 1000;
+            long totalWords = 0;
+			File outputDir = new File("output/output");
+			File[] listOfFiles = outputDir.listFiles();
+			for(int i=0; i< listOfFiles.length; i++) {
+				FileReader tmpFileReader = new FileReader(listOfFiles[i]);
+                BufferedReader bufferedReader = new BufferedReader(tmpFileReader);
+                String line = "";
+				while ((line = bufferedReader.readLine()) != null) {
+					String[] lineArray = line.split("\t");
+					totalWords+=Integer.parseInt(lineArray[1]);
+                }
+			}
             int medianIndex1 = (int) Math.ceil((totalWords / 2.0));
             int medianIndex2 = (int) Math.floor((totalWords / 2.0));
             median = readAndFindMedian(job.outputBucket, medianIndex1, medianIndex2, conf, job.instanceIp);
